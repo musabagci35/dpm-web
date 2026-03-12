@@ -1,0 +1,27 @@
+import { NextResponse } from "next/server";
+import crypto from "crypto";
+
+export async function POST() {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME!;
+  const apiKey = process.env.CLOUDINARY_API_KEY!;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET!;
+  const folder = process.env.CLOUDINARY_FOLDER || "dpm/cars";
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    return NextResponse.json({ error: "Cloudinary env missing" }, { status: 500 });
+  }
+
+  const timestamp = Math.floor(Date.now() / 1000);
+
+  // parameters included in signature MUST match upload payload params
+  const toSign = `folder=${folder}&timestamp=${timestamp}`;
+  const signature = crypto.createHash("sha1").update(toSign + apiSecret).digest("hex");
+
+  return NextResponse.json({
+    cloudName,
+    apiKey,
+    timestamp,
+    folder,
+    signature,
+  });
+}
