@@ -51,7 +51,7 @@ description: { type: String, trim: true },
 images: [
 {
 url: { type: String, required: true },
-publicId: { type: String },
+publicId: { type: String, default: "" },
 },
 ],
 
@@ -84,26 +84,28 @@ required: true,
 index: true,
 },
 
-// status
 isActive: { type: Boolean, default: true, index: true },
 
 isFeatured: { type: Boolean, default: false, index: true },
-marketing: {
-    facebookPosted: { type: Boolean, default: false },
-    craigslistReady: { type: Boolean, default: false },
-    offerupReady: { type: Boolean, default: false },
-    marketplaceReady: { type: Boolean, default: false },
-    googleIndexed: { type: Boolean, default: false },
-    lastMarketingRunAt: { type: Date, default: null },
-  },
 
+marketing: {
+facebookPosted: { type: Boolean, default: false },
+craigslistReady: { type: Boolean, default: false },
+offerupReady: { type: Boolean, default: false },
+marketplaceReady: { type: Boolean, default: false },
+googleIndexed: { type: Boolean, default: false },
+lastMarketingRunAt: { type: Date, default: null },
+},
 },
 { timestamps: true }
 );
 
-CarSchema.index({ make: 1, model: 1, price: 1 });
+CarSchema.index({ make: 1, model: 1, price: 1, mileage: 1, isActive: 1 });
 
-CarSchema.index({ dealerId: 1, vin: 1 }, { unique: true, sparse: true });
+CarSchema.index(
+{ dealerId: 1, vin: 1 },
+{ unique: true, partialFilterExpression: { vin: { $exists: true, $ne: "" } } }
+);
 
 const Car = models.Car || model("Car", CarSchema);
 
