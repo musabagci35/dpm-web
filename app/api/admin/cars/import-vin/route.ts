@@ -1,139 +1,195 @@
-import { NextResponse } from "next/server"
-import mongoose from "mongoose"
-import { connectDB } from "@/lib/mongodb"
-import Car from "@/models/Car"
-import VinHistory from "@/models/VinHistory"
-import { postToFacebook } from "@/lib/facebookPost"
+import { NextResponse } from "next/server";
+import mongoose from "mongoose";
+import { connectDB } from "@/lib/mongodb";
+import Car from "@/models/Car";
+import VinHistory from "@/models/VinHistory";
+import { postToFacebook } from "@/lib/facebookPost";
 
 export async function POST(req: Request) {
+  try {
+    await connectDB();
 
-try{
+    const { vin, dealerId } = await req.json();
 
-await connectDB()
+    const cleanVin = String(vin || "").trim().toUpperCase();
 
-const { vin, dealerId } = await req.json()
+    if (!cleanVin) {
+      return NextResponse.json(
+        { error: "VIN required" },
+        { status: 400 }
+      );
+    }
 
-if(!vin){
-return NextResponse.json({error:"VIN required"},{status:400})
-}
+    if (cleanVin.length !== 17) {
+      return NextResponse.json(
+        { error: "VIN must be 17 characters" },
+        { status: 400 }
+      );
+    }
 
-// ---------- NHTSA ----------
+    if (!dealerId) {
+      return NextResponse.json(
+        { error: "Dealer ID required" },
+        { status: 400 }
+      );
+    }
 
-const nhtsa = await fetch(
-`https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`
-)
+    const existing = await Car.findOne({
+      vin: cleanVin,
+      dealerId,
+    });
 
-const nhtsaData = await nhtsa.json()
-const results = nhtsaData.Results || []
+    if (existing) {
+      return NextResponse.json({
+        success: true,
+        carId: existing._id,
+        existing: true,
+      });
+    }
 
-function find(name:string){
-return results.find((r:any)=>r.Variable===name)?.Value || ""
-}
+    const nhtsaUrl = `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/${cleanVin}?format=json`;
 
-const make = find("Make") || "Unknown"
-const model = find("Model") || "Unknown"
-const year = Number(find("Model Year")) || 2000
-const trim = find("Trim")
-const engine = find("Engine Model")
-const fuel = find("Fuel Type - Primary")
-const body = find("Body Class")
-const manufacturer = find("Manufacturer Name")
-const doors = find("Doors")
+    const nhtsaRes = await fetch(nhtsaUrl, {
+      cache: "no-store",
+    });
 
-// ---------- IMAGE ----------
+    if (!nhtsaRes.ok) {
+      return NextResponse.json(
+        { error: "VIN decode request failed" },
+        { status: 500 }
+      );
+    }
 
-const image = `https://cdn.imagin.studio/getimage?customer=img&make=${make}&modelFamily=${model}&modelYear=${year}&zoomType=fullscreen&angle=front`
+    const nhtsaData = await nhtsaRes.json();
+    const vehicle = nhtsaData?.Results?.[0] || {};
 
-// ---------- DESCRIPTION ----------
+    const make = vehicle.Make || "Unknown";
+    const model = vehicle.Model || "Unknown";
+    const year = Number(vehicle.ModelYear) || 2000;
+    const trim = vehicle.Trim || "";
+    const engine = vehicle.EngineModel || "";
+    const fuel = vehicle.FuelTypePrimary || "";
+    const body = vehicle.BodyClass || "";
+    const manufacturer = vehicle.Manufacturer || vehicle.ManufacturerName || "";
+    const doors = vehicle.Doors || "";
 
-const description = `
-This ${year} ${make} ${model} ${trim || ""} offers a reliable and efficient driving experience.
+    const image = `https://cdn.imagin.studio/getimage?customer=img&make=${encodeURIComponent(
+      make
+    )}&modelFamily=${encodeURIComponent(
+      model
+    )}&modelYear=${year}&zoomType=fullscreen&angle=front`;
+
+    const title = `${year} ${make} ${model}${trim ? ` ${trim}` : ""}`;
+
+    const description = `${title}
+
+This vehicle delivers a smooth and dependable driving experience.
 
 Engine: ${engine || "N/A"}
-Fuel Type: ${fuel || "N/A"}
+Fuel: ${fuel || "N/A"}
 Body Style: ${body || "N/A"}
+Doors: ${doors || "N/A"}
+Manufacturer: ${manufacturer || "N/A"}
 
-Perfect for commuting with strong reliability and great fuel economy.
-`
+A great choice for daily commuting or long-distance travel, offering comfort, reliability, and strong overall value.`;
 
-// ---------- CHECK EXISTING ----------
+    const car = await Car.create({
+      title,
+      year,
+      make,
+      model,
+      trim,
 
-const existing = await Car.findOne({ vin, dealerId })
+      titleStatus: "unknown",
+      salvage: false,
+      flood: false,
+      junk: false,
+      odometerStatus: "unknown",
 
-if(existing){
-return NextResponse.json({
-success:true,
-carId:existing._id
-})
-}
+      price: 0,
+      marketPrice: 0,
+      mileage: 0,
 
-// ---------- CREATE CAR ----------
+      vin: cleanVin,
+      stockNumber: "",
 
-const car = await Car.create({
+      condition: "used",
+      drivetrain: "",
+      transmission: "",
+      fuelType: fuel,
+      bodyStyle: body,
+      exteriorColor: "",
+      interiorColor: "",
+      description,
 
-title:`${year} ${make} ${model}`,
+      images: [
+        {
+          url: image,
+          publicId: "",
+        },
+      ],
 
-year,
-make,
-model,
-trim,
+      auctionPhotos: [],
 
-price:0,
-mileage:0,
+      vehicleHistory: {
+        title: "unknown",
+        odometer: "unknown",
+        accidents: 0,
+        salvage: false,
+        flood: false,
+        junk: false,
+      },
 
-vin,
+      facebookListing: {
+        posted: false,
+        productId: "",
+        lastPostedAt: null,
+      },
 
-bodyStyle:body,
-fuelType:fuel,
+      dealerId: new mongoose.Types.ObjectId(dealerId),
 
-description,
+      isActive: false,
+      isFeatured: false,
 
-engine,
-doors,
-manufacturer,
+      marketing: {
+        facebookPosted: false,
+        craigslistReady: false,
+        offerupReady: false,
+        marketplaceReady: false,
+        googleIndexed: false,
+        lastMarketingRunAt: null,
+      },
 
-dealerId: new mongoose.Types.ObjectId(dealerId),
+      // extra decoded values
+      engine,
+      doors,
+      manufacturer,
+    });
 
-images:[
-{
-url:image
-}
-]
+    await VinHistory.create({
+      vin: cleanVin,
+      make,
+      model,
+      year,
+    });
 
-})
+    try {
+      await postToFacebook(car);
+    } catch (facebookError) {
+      console.log("Facebook post failed:", facebookError);
+    }
 
-// ---------- VIN HISTORY ----------
+    return NextResponse.json({
+      success: true,
+      carId: car._id,
+      existing: false,
+    });
+  } catch (err) {
+    console.error("VIN IMPORT ERROR", err);
 
-await VinHistory.create({
-vin,
-make,
-model,
-year
-})
-
-// ---------- AUTO FACEBOOK POST ----------
-
-try{
-await postToFacebook(car)
-}catch(e){
-console.log("Facebook post failed")
-}
-
-// ---------- RESPONSE ----------
-
-return NextResponse.json({
-success:true,
-carId:car._id
-})
-
-}catch(err){
-
-console.error("VIN IMPORT ERROR",err)
-
-return NextResponse.json({
-error:"VIN import failed"
-},{status:500})
-
-}
-
+    return NextResponse.json(
+      { error: "VIN import failed" },
+      { status: 500 }
+    );
+  }
 }
