@@ -1,10 +1,12 @@
+export const dynamic = "force-dynamic";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
 import Link from "next/link";
 import RemoveCarButton from "@/components/RemoveCarButton";
 
+
 type Props = {
-  searchParams: Promise<{ status?: string }>;
+  searchParams?: { status?: string };
 };
 
 export default async function AdminInventoryPage({ searchParams }: Props) {
