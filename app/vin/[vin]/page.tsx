@@ -1,73 +1,130 @@
-import { connectDB } from "@/lib/mongodb"
-import Vin from "@/models/Vin"
+import Image from "next/image";
+import AuctionIntelligencePanel from "@/components/AuctionIntelligencePanel";
+import VehicleHistoryPanel from "@/components/VehicleHistoryPanel";
 
-export default async function VinPage({params}:{params:{vin:string}}){
+type Props = {
+  params: Promise<{ vin: string }>;
+};
 
-const vin = params.vin.toUpperCase()
+function numberOrZero(value: any) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
 
-await connectDB()
+function estimateMarketValue(year: number, make: string, model: string) {
+  const age = new Date().getFullYear() - year;
 
-const data = await fetch(
-`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`
-)
+  let base = 14000;
 
-const json = await data.json()
+  if (age > 12) base = 4500;
+  else if (age > 8) base = 8500;
+  else if (age > 4) base = 13500;
 
-const car = json.Results[0]
+  if (make.toLowerCase() === "toyota" || make.toLowerCase() === "honda") {
+    base += 1500;
+  }
 
-return(
+  if (model.toLowerCase().includes("prius")) {
+    base += 1000;
+  }
 
-<div className="mx-auto max-w-4xl px-6 py-10">
+  return Math.max(base, 2500);
+}
 
-<h1 className="text-3xl font-bold mb-6">
-VIN Report {vin}
-</h1>
+export default async function VinPage({ params }: Props) {
+  const { vin } = await params;
+  const cleanVin = vin.trim().toUpperCase();
 
-<div className="border p-6 rounded-xl bg-white">
+  const res = await fetch(
+    `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(
+      cleanVin
+    )}?format=json`,
+    { cache: "no-store" }
+  );
 
-<p><b>Make:</b> {car.Make}</p>
-<p><b>Model:</b> {car.Model}</p>
-<p><b>Year:</b> {car.ModelYear}</p>
-<p><b>Engine:</b> {car.EngineModel}</p>
-<p><b>Fuel:</b> {car.FuelTypePrimary}</p>
+  const data = await res.json();
+  const vehicle = data?.Results?.[0];
 
-</div>
+  const make = vehicle?.Make || "Unknown";
+  const model = vehicle?.Model || "Unknown";
+  const year = numberOrZero(vehicle?.ModelYear);
+  const trim = vehicle?.Trim || "";
+  const fuel = vehicle?.FuelTypePrimary || "—";
+  const body = vehicle?.BodyClass || "—";
+  const manufacturer = vehicle?.Manufacturer || "—";
+  const doors = vehicle?.Doors || "—";
+  const driveType = vehicle?.DriveType || "—";
+  const transmission = vehicle?.TransmissionStyle || "—";
 
+  const imageUrl = `https://cdn.imagin.studio/getimage?customer=img&make=${encodeURIComponent(
+    make
+  )}&modelFamily=${encodeURIComponent(model)}&modelYear=${encodeURIComponent(
+    String(year || "2020")
+  )}&zoomType=fullscreen&angle=front`;
 
-<div className="border p-6 rounded-xl mt-6 bg-white">
+  const marketValue = estimateMarketValue(year || 2016, make, model);
+  const suggestedPrice = Math.round(marketValue * 0.95);
 
-<h2 className="font-bold text-xl mb-4">
-Auction Records
-</h2>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-2xl border bg-white p-6">
+            <Image
+              src={imageUrl}
+              alt={`${year} ${make} ${model}`}
+              width={1200}
+              height={800}
+              className="h-auto w-full rounded-xl object-cover"
+            />
+          </div>
 
-<a
-href={`https://bidfax.info/search/${vin}`}
-target="_blank"
-className="bg-blue-600 text-white px-4 py-2 rounded"
->
-Auction Damage Photos
-</a>
+          <div className="space-y-6">
+            <div className="rounded-2xl border bg-white p-5">
+              <div className="text-2xl font-bold">Vehicle Specs</div>
 
-</div>
+              <div className="mt-4 space-y-2 text-sm">
+                <div><strong>Make:</strong> {make}</div>
+                <div><strong>Model:</strong> {model}</div>
+                <div><strong>Year:</strong> {year || "—"}</div>
+                <div><strong>Trim:</strong> {trim || "—"}</div>
+                <div><strong>Fuel:</strong> {fuel}</div>
+                <div><strong>Body:</strong> {body}</div>
+                <div><strong>Drive Type:</strong> {driveType}</div>
+                <div><strong>Transmission:</strong> {transmission}</div>
+                <div><strong>Doors:</strong> {doors}</div>
+                <div><strong>Manufacturer:</strong> {manufacturer}</div>
+              </div>
+            </div>
 
+            <div className="rounded-2xl border bg-white p-5">
+              <div className="text-2xl font-bold">Market Intelligence</div>
 
-<div className="border p-6 rounded-xl mt-6 bg-white">
+              <div className="mt-4 text-4xl font-bold text-green-600">
+                ${marketValue.toLocaleString()}
+              </div>
+              <div className="mt-1 text-gray-600">
+                Estimated Market Value
+              </div>
 
-<h2 className="font-bold text-xl mb-4">
-Full History
-</h2>
+              <div className="mt-5 text-3xl font-semibold">
+                ${suggestedPrice.toLocaleString()}
+              </div>
+              <div className="mt-1 text-gray-600">
+                Suggested Dealer List Price
+              </div>
+            </div>
+          </div>
+        </div>
 
-<a
-href={`https://www.vinaudit.com/vin/${vin}`}
-target="_blank"
-className="bg-red-600 text-white px-4 py-2 rounded"
->
-Full VIN Report
-</a>
+        <div className="mt-6">
+          <AuctionIntelligencePanel vin={cleanVin} />
+        </div>
 
-</div>
-
-</div>
-
-)
+        <div className="mt-6">
+          <VehicleHistoryPanel vin={cleanVin} />
+        </div>
+      </div>
+    </div>
+  );
 }

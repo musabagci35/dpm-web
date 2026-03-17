@@ -2,291 +2,226 @@ import Link from "next/link";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
 import VinHistory from "@/models/VinHistory";
-
-import CraigslistPostButton from "@/components/CraigslistPostButton";
-import AdminQuickActions from "@/components/AdminQuickActions";
-import RunMarketingButton from "@/components/RunMarketingButton";
-import OfferUpDraftButton from "@/components/OfferUpDraftButton";
-import MarketplaceDraftButton from "@/components/MarketplaceDraftButton";
-import RemoveCarButton from "@/components/RemoveCarButton";
-import FacebookPostButton from "@/components/FacebookPostButton";
-import FacebookAutoPost from "@/components/FacebookAutoPost";
+import DealerAIPanel from "@/components/DealerAIPanel";
+import AuctionAIPanel from "@/components/AuctionAIPanel";
 
 export default async function AdminDashboardPage() {
 
   await connectDB();
 
-  const [totalCars, liveCars] = await Promise.all([
+  const [totalCars, liveCars, vinImports] = await Promise.all([
     Car.countDocuments({}),
     Car.countDocuments({ isActive: true }),
+    VinHistory.countDocuments({})
   ]);
 
-  const latestCarsRaw = await Car.find({})
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .lean();
-
-  const vinHistoryRaw = await VinHistory.find({})
+  const latestCars = await Car.find(
+    {},
+    { make: 1, model: 1, year: 1, vin: 1, images: 1 }
+  )
     .sort({ createdAt: -1 })
     .limit(5)
     .lean();
 
-  const latestCars = latestCarsRaw.map((car: any) => ({
-    ...car,
-    _id: car._id.toString(),
-  }));
-
-  const vinHistory = vinHistoryRaw.map((v: any) => ({
-    ...v,
-    _id: v._id.toString(),
-  }));
+  const vinHistory = await VinHistory.find(
+    {},
+    { make: 1, model: 1, year: 1, vin: 1 }
+  )
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean();
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 py-10">
+    <main className="min-h-screen bg-gray-50">
 
-        {/* HEADER */}
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      {/* HERO HEADER */}
 
-          <div>
-            <h1 className="text-3xl font-bold">
-              Dealer Dashboard
-            </h1>
+      <div className="bg-gradient-to-r from-black to-gray-900 text-white py-16">
+        <div className="max-w-7xl mx-auto px-6 text-center">
 
-            <p className="mt-1 text-sm text-gray-600">
-              Quick overview of inventory.
-            </p>
-          </div>
+          <img
+            src="/logo.png"
+            alt="Drive Prime Motors"
+            className="mx-auto w-28 mb-6"
+          />
 
-          <div className="flex gap-2">
+          <h1 className="text-4xl font-bold">
+            Drive Prime Dealer Control
+          </h1>
 
-            <Link
-              href="/admin/add-car"
-              className="rounded-xl bg-black px-4 py-2 text-sm text-white"
-            >
-              Add Car
-            </Link>
+          <p className="text-white/70 mt-3">
+            Inventory · Leads · Pricing Intelligence · Marketing
+          </p>
 
-            <Link
-              href="/admin/inventory"
-              className="rounded-xl border px-4 py-2 text-sm"
-            >
-              Inventory
-            </Link>
+        </div>
+      </div>
 
-          </div>
+      {/* DASHBOARD CONTENT */}
+
+      <div className="max-w-7xl mx-auto px-6 py-10">
+
+        {/* ACTION BUTTONS */}
+
+        <div className="flex gap-3 mb-10 flex-wrap">
+
+          <Link
+            href="/admin/add-car"
+            className="bg-black text-white px-5 py-2 rounded-lg"
+          >
+            Add Vehicle
+          </Link>
+
+          <Link
+            href="/admin/inventory"
+            className="border px-5 py-2 rounded-lg"
+          >
+            Inventory
+          </Link>
+
+          <Link
+            href="/admin/crm"
+            className="border px-5 py-2 rounded-lg"
+          >
+            CRM
+          </Link>
 
         </div>
 
         {/* METRICS */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
-          <MetricCard
-            title="Total Vehicles"
-            value={totalCars}
-            href="/admin/inventory"
-          />
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
 
-          <MetricCard
-            title="Live Vehicles"
-            value={liveCars}
-            href="/admin/inventory"
-          />
+          <div className="bg-white border rounded-xl p-6">
+            <p className="text-gray-500 text-sm">Total Vehicles</p>
+            <p className="text-4xl font-bold mt-2">{totalCars}</p>
+          </div>
+
+          <div className="bg-white border rounded-xl p-6">
+            <p className="text-gray-500 text-sm">Live Vehicles</p>
+            <p className="text-4xl font-bold mt-2">{liveCars}</p>
+          </div>
+
+          <div className="bg-white border rounded-xl p-6">
+            <p className="text-gray-500 text-sm">VIN Imports</p>
+            <p className="text-4xl font-bold mt-2">{vinImports}</p>
+          </div>
 
         </div>
 
-        {/* QUICK ACTIONS */}
-        <div className="mt-6">
-          <AdminQuickActions />
+        {/* AI PANELS */}
+
+        <div className="grid md:grid-cols-2 gap-6 mb-12">
+
+          <DealerAIPanel />
+
+          <AuctionAIPanel latestCars={latestCars} />
+
         </div>
 
         {/* LATEST VEHICLES */}
-        <div className="mt-6 rounded-2xl border bg-white p-5">
 
-          <div className="text-lg font-semibold">
+        <div className="bg-white border rounded-xl p-6 mb-10">
+
+          <h2 className="text-xl font-bold mb-5">
             Latest Vehicles
-          </div>
+          </h2>
 
-          {latestCars.length === 0 ? (
-
-            <div className="mt-4 rounded-xl border bg-gray-50 p-6 text-sm text-gray-600">
-              No vehicles found.
-            </div>
-
-          ) : (
-
-            <div className="mt-4 space-y-3">
-
-              {latestCars.map((car: any) => {
-
-                const id = car._id;
-
-                return (
-
-                  <div
-                    key={id}
-                    className="rounded-xl border p-4 flex items-center justify-between"
-                  >
-
-                    <div className="flex items-center gap-4">
-
-                      <img
-                        src={car.images?.[0]?.url ?? "/car.png"}
-                        alt="vehicle"
-                        className="w-16 h-16 object-cover rounded"
-                      />
-
-                      <div>
-
-                        <div className="font-medium">
-                          {car.year} {car.make} {car.model}
-                        </div>
-
-                        <div className="text-sm text-gray-600">
-                          VIN: {car.vin || "—"}
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                    <div className="flex gap-2 flex-wrap">
-
-                      <Link
-                        href={`/admin/edit-car/${id}`}
-                        className="rounded-lg border px-3 py-1.5 text-xs"
-                      >
-                        Edit
-                      </Link>
-
-                      <Link
-                        href={`/inventory/${id}`}
-                        className="rounded-lg border px-3 py-1.5 text-xs"
-                      >
-                        View
-                      </Link>
-
-                      <RemoveCarButton id={id} />
-
-                      <CraigslistPostButton carId={id} />
-
-                      <FacebookPostButton carId={id} />
-
-                      <FacebookAutoPost carId={id} />
-
-                      <MarketplaceDraftButton carId={id} />
-
-                      <OfferUpDraftButton carId={id} />
-
-                      <RunMarketingButton carId={id} />
-
-                    </div>
-
-                  </div>
-
-                );
-
-              })}
-
-            </div>
-
+          {latestCars.length === 0 && (
+            <p className="text-gray-500">
+              No vehicles added yet.
+            </p>
           )}
+
+          {latestCars.map((car: any) => (
+
+            <div
+              key={String(car._id)}
+              className="flex justify-between items-center py-3 border-b"
+            >
+
+              <div className="flex items-center gap-3">
+
+                <img
+                  src={car.images?.[0]?.url ?? "/car.png"}
+                  alt="Vehicle"
+                  className="w-12 h-12 object-cover rounded"
+                />
+
+                <div>
+
+                  <p className="font-semibold">
+                    {car.year} {car.make} {car.model}
+                  </p>
+
+                  <p className="text-sm text-gray-500">
+                    VIN: {car.vin}
+                  </p>
+
+                </div>
+
+              </div>
+
+              <Link
+                href={`/admin/edit-car/${car._id}`}
+                className="border px-3 py-1 rounded"
+              >
+                Edit
+              </Link>
+
+            </div>
+
+          ))}
 
         </div>
 
         {/* VIN HISTORY */}
-        <div className="mt-6 rounded-2xl border bg-white p-5">
 
-          <div className="text-lg font-semibold">
+        <div className="bg-white border rounded-xl p-6">
+
+          <h2 className="text-xl font-bold mb-5">
             Recent VIN Imports
-          </div>
+          </h2>
 
-          {vinHistory.length === 0 ? (
-
-            <div className="mt-4 text-sm text-gray-600">
-              No VIN history found.
-            </div>
-
-          ) : (
-
-            <div className="mt-4 space-y-2">
-
-              {vinHistory.map((v: any) => {
-
-                const vin = v.vin;
-
-                return (
-
-                  <div
-                    key={v._id}
-                    className="flex items-center justify-between border rounded-lg p-3"
-                  >
-
-                    <div>
-
-                      <div className="font-medium">
-                        {v.year} {v.make} {v.model}
-                      </div>
-
-                      <div className="text-sm text-gray-600">
-                        VIN: {v.vin}
-                      </div>
-
-                    </div>
-
-                    <Link
-                      href={`/admin/add-car?vin=${vin}`}
-                      className="text-xs border px-3 py-1 rounded"
-                    >
-                      Import Again
-                    </Link>
-
-                  </div>
-
-                );
-
-              })}
-
-            </div>
-
+          {vinHistory.length === 0 && (
+            <p className="text-gray-500">
+              No VIN imports yet.
+            </p>
           )}
 
+          {vinHistory.map((v: any) => (
+
+            <div
+              key={String(v._id)}
+              className="flex justify-between items-center py-3 border-b"
+            >
+
+              <div>
+
+                <p className="font-semibold">
+                  {v.year} {v.make} {v.model}
+                </p>
+
+                <p className="text-sm text-gray-500">
+                  VIN: {v.vin}
+                </p>
+
+              </div>
+
+              <Link
+                href={`/admin/add-car?vin=${v.vin}`}
+                className="border px-3 py-1 rounded"
+              >
+                Import Again
+              </Link>
+
+            </div>
+
+          ))}
+
         </div>
 
       </div>
-    </div>
-  );
-}
 
-/* METRIC CARD */
-
-function MetricCard({
-  title,
-  value,
-  href,
-}: {
-  title: string;
-  value: number;
-  href: string;
-}) {
-
-  return (
-
-    <Link href={href}>
-
-      <div className="rounded-2xl border bg-white p-5 hover:shadow cursor-pointer transition">
-
-        <div className="text-sm text-gray-600">
-          {title}
-        </div>
-
-        <div className="mt-2 text-3xl font-bold">
-          {value.toLocaleString()}
-        </div>
-
-      </div>
-
-    </Link>
-
+    </main>
   );
 }

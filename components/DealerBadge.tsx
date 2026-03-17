@@ -1,63 +1,62 @@
 "use client";
 
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function DealerBadge({ carId }:{ carId:string }){
+type AuctionAI = {
+  pricing?: {
+    expectedProfit?: number;
+  };
+};
 
-const [data,setData] = useState<any>(null)
+export default function DealerBadge({ carId }: { carId: string }) {
+  const [data, setData] = useState<AuctionAI | null>(null);
+  const [loading, setLoading] = useState(true);
 
-useEffect(()=>{
+  useEffect(() => {
+    async function run() {
+      try {
+        const res = await fetch(`/api/admin/cars/${carId}/auction-ai`);
+        const result = await res.json();
 
-async function run(){
+        if (res.ok) {
+          setData(result);
+        }
+      } catch (err) {
+        console.error("Auction AI fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-const res = await fetch(`/api/admin/cars/${carId}/auction-ai`)
+    run();
+  }, [carId]);
 
-const result = await res.json()
+  if (loading) return null;
+  if (!data) return null;
 
-if(res.ok){
-setData(result)
-}
+  const profit = data?.pricing?.expectedProfit ?? 0;
 
-}
+  return (
+    <div className="mt-2 text-sm">
 
-run()
+      {profit > 2500 && (
+        <div className="text-green-600 font-semibold">
+          🔥 BUY — Profit ${profit.toLocaleString()}
+        </div>
+      )}
 
-},[carId])
+      {profit > 0 && profit <= 2500 && (
+        <div className="text-yellow-600 font-semibold">
+          ⚠ MAYBE — Profit ${profit.toLocaleString()}
+        </div>
+      )}
 
-if(!data) return null
+      {profit <= 0 && (
+        <div className="text-red-600 font-semibold">
+          ✖ SKIP
+        </div>
+      )}
 
-const profit = data.pricing.expectedProfit
-
-return(
-
-<div className="mt-2 text-sm">
-
-{profit > 2500 && (
-
-<div className="text-green-600 font-semibold">
-🔥 BUY — Profit ${profit.toLocaleString()}
-</div>
-
-)}
-
-{profit > 0 && profit <= 2500 && (
-
-<div className="text-yellow-600 font-semibold">
-⚠ MAYBE — Profit ${profit.toLocaleString()}
-</div>
-
-)}
-
-{profit <= 0 && (
-
-<div className="text-red-600 font-semibold">
-✖ SKIP
-</div>
-
-)}
-
-</div>
-
-)
-
+    </div>
+  );
 }

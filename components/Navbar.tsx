@@ -1,33 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function Navbar() {
-
-  const [vin, setVin] = useState("");
-  const router = useRouter();
-
-  function handleVinSearch() {
-    if (!vin) return;
-    router.push(`/vin-report?vin=${vin}`);
-  }
-
   return (
-    <header className="border-b bg-white sticky top-0 z-50">
+    <header className="sticky top-0 z-50 border-b bg-white">
 
-      <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between gap-6">
+      <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
 
         {/* LOGO */}
         <Link
-          href="/"
+          href="/admin/dashboard"
           className="text-xl font-extrabold tracking-tight"
         >
           Drive Prime Motors
         </Link>
 
-        {/* NAV LINKS */}
+        {/* NAV */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
 
           <Link href="/inventory" className="hover:text-red-600 transition">
@@ -56,41 +45,22 @@ export default function Navbar() {
 
         </nav>
 
-        {/* VIN SEARCH */}
-        <div className="hidden lg:flex items-center border rounded-lg overflow-hidden">
-
-          <input
-            value={vin}
-            onChange={(e) => setVin(e.target.value)}
-            placeholder="Enter VIN"
-            className="px-3 py-2 text-sm outline-none w-40"
-          />
-
-          <button
-            onClick={handleVinSearch}
-            className="bg-black text-white px-3 py-2 text-sm"
-          >
-            Check
-          </button>
-
-        </div>
-
-        {/* RIGHT BUTTONS */}
+        {/* RIGHT SIDE */}
         <div className="flex items-center gap-3">
-
-          <a
-            href="tel:+19162618880"
-            className="hidden md:block rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-          >
-            Call Now
-          </a>
 
           <Link
             href="/admin"
-            className="hidden md:block border px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100"
+            className="hidden md:block border px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 transition"
           >
             Admin
           </Link>
+
+          <a
+            href="tel:+19162618880"
+            className="hidden md:block rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition"
+          >
+            Call Now
+          </a>
 
         </div>
 

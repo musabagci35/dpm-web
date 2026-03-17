@@ -16,3 +16,4 @@ const DealerSchema = new Schema(
 
 const Dealer = models.Dealer || model("Dealer", DealerSchema);
 export default Dealer;
+

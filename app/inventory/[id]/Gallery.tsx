@@ -1,62 +1,57 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useState } from "react";
 
 type Props = {
-  images?: string[];
+  images: { url: string }[];
 };
 
 export default function Gallery({ images }: Props) {
-  const safeImages =
-    images && images.length > 0 ? images : ["/car.png"];
+  const safeImages = (images || [])
+    .map((img) => img?.url)
+    .filter((url) => typeof url === "string" && url.trim() !== "");
 
-  const [active, setActive] = useState<string>(safeImages[0]);
+  const [current, setCurrent] = useState(0);
 
-  // Eğer images değişirse active image reset
-  useEffect(() => {
-    setActive(safeImages[0]);
-  }, [images]);
+  const active =
+    safeImages.length > 0 ? safeImages[current] : "/car-placeholder.png";
 
   return (
     <div className="space-y-4">
-
       {/* MAIN IMAGE */}
       <div className="relative w-full h-[450px] overflow-hidden rounded-xl bg-gray-100">
         <Image
           src={active}
           alt="Vehicle image"
           fill
-          sizes="(max-width:768px) 100vw, 50vw"
+          sizes="100vw"
           className="object-cover"
-          priority
         />
       </div>
 
       {/* THUMBNAILS */}
-      <div className="flex gap-3 overflow-x-auto">
-
-        {safeImages.map((img, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={() => setActive(img)}
-            className={`relative h-24 w-32 shrink-0 overflow-hidden rounded-lg border ${
-              active === img ? "border-black" : "border-gray-200"
-            }`}
-          >
-            <Image
-              src={img}
-              alt={`Thumbnail ${index}`}
-              fill
-              sizes="120px"
-              className="object-cover"
-            />
-          </button>
-        ))}
-
-      </div>
-
+      {safeImages.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto">
+          {safeImages.map((img, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrent(index)}
+              className={`relative w-[90px] h-[70px] rounded overflow-hidden border ${
+                current === index ? "border-black" : "border-gray-300"
+              }`}
+            >
+              <Image
+                src={img}
+                alt={`Thumbnail ${index}`}
+                fill
+                sizes="90px"
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

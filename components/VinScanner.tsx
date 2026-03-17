@@ -1,37 +1,40 @@
 "use client";
 
-import { useEffect } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function VinScanner({ onScan }: any) {
+export default function VinScanner() {
+  const [vin, setVin] = useState("");
+  const router = useRouter();
 
-  useEffect(() => {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
 
-    const scanner = new Html5QrcodeScanner(
-      "vin-reader",
-      {
-        fps: 10,
-        qrbox: 250
-      },
-      false
-    );
+    if (!vin || vin.length < 5) return;
 
-    scanner.render(
-      (decodedText) => {
-        onScan(decodedText);
-      },
-      (error) => {}
-    );
+    const cleanVin = vin.trim().toUpperCase();
 
-    return () => {
-      scanner.clear().catch(() => {});
-    };
-
-  }, []);
+    router.push(`/vin/${cleanVin}`);
+  }
 
   return (
-    <div className="border rounded-xl p-4">
-      <div id="vin-reader" />
-    </div>
+    <form
+      onSubmit={handleSubmit}
+      className="flex items-center"
+    >
+      <input
+        value={vin}
+        onChange={(e) => setVin(e.target.value)}
+        placeholder="Enter VIN"
+        className="w-56 border px-3 py-2 outline-none"
+      />
+
+      <button
+        type="submit"
+        className="bg-black px-4 py-2 text-white"
+      >
+        Check
+      </button>
+    </form>
   );
 }

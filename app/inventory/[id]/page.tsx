@@ -3,10 +3,9 @@ import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
 import Link from "next/link";
-import DealerAIChat from "@/components/DealerAIChat";
 import Gallery from "./Gallery";
 import DetailLeadForm from "./DetailLeadForm";
-import VehicleChat from "@/components/VehicleChat";
+
 import MobileCTA from "./MobileCTA";
 
 function buildVehicleSchema({
@@ -255,7 +254,7 @@ export default async function VehicleDetailPage({ params }: Props) {
                 Description
               </h3>
 
-              <DealerAIChat carTitle={title} />
+             
 
               <p className="text-gray-600 leading-relaxed">
                 {car.description}
@@ -264,7 +263,7 @@ export default async function VehicleDetailPage({ params }: Props) {
             </div>
           )}
 
-          <VehicleChat carId={id} />
+        
 
         </div>
 

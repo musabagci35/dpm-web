@@ -1,22 +1,45 @@
-import mongoose from "mongoose"
+import mongoose, { Schema, models, model } from "mongoose";
 
-const VinHistorySchema = new mongoose.Schema({
-
-vin:{
-type:String,
-required:true
+const VinHistorySchema = new Schema(
+{
+vin: {
+type: String,
+required: true,
+trim: true,
+uppercase: true,
+index: true,
 },
 
-make:String,
-model:String,
-year:Number,
+make: {
+type: String,
+trim: true,
+index: true,
+},
 
-createdAt:{
-type:Date,
-default:Date.now
-}
+model: {
+type: String,
+trim: true,
+index: true,
+},
 
-})
+year: {
+type: Number,
+index: true,
+},
 
-export default mongoose.models.VinHistory ||
-mongoose.model("VinHistory",VinHistorySchema)
+decodedAt: {
+type: Date,
+default: Date.now,
+},
+
+},
+{ timestamps: true }
+);
+
+// make + model arama hızlandırma
+VinHistorySchema.index({ make: 1, model: 1 });
+
+const VinHistory =
+models.VinHistory || model("VinHistory", VinHistorySchema);
+
+export default VinHistory;

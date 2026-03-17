@@ -1,44 +1,66 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
 
-export async function POST(req:Request){
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const vin = searchParams.get("vin")?.trim();
 
-const body = await req.json()
-const vin = body.vin
+    if (!vin) {
+      return NextResponse.json(
+        { error: "VIN required" },
+        { status: 400 }
+      );
+    }
 
-const url = `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`
+    const res = await fetch(
+      `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`,
+      { cache: "no-store" }
+    );
 
-const res = await fetch(url)
-const json = await res.json()
+    const data = await res.json();
+    const vehicle = data?.Results?.[0];
 
-const car = json.Results[0]
+    if (!vehicle) {
+      return NextResponse.json(
+        { error: "VIN decode failed" },
+        { status: 400 }
+      );
+    }
 
-/* FAKE MARKET VALUE */
+    const report = {
+      vin,
+      make: vehicle.Make || "",
+      model: vehicle.Model || "",
+      year: vehicle.ModelYear || "",
+      trim: vehicle.Trim || "",
+      engine: vehicle.DisplacementL
+        ? `${vehicle.DisplacementL}L ${vehicle.EngineConfiguration || ""}`.trim()
+        : vehicle.EngineModel || "",
+      fuel: vehicle.FuelTypePrimary || "",
+      body: vehicle.BodyClass || "",
+      driveType: vehicle.DriveType || "",
+      transmission: vehicle.TransmissionStyle || "",
+      manufacturer: vehicle.Manufacturer || "",
+      plantCountry: vehicle.PlantCountry || "",
+      plantCompany: vehicle.PlantCompanyName || "",
+      doors: vehicle.Doors || "",
+      series: vehicle.Series || "",
+      vehicleType: vehicle.VehicleType || "",
+      suggestedLinks: {
+        bidfax: `https://bidfax.info/search?q=${encodeURIComponent(vin)}`,
+        statvin: `https://stat.vin/cars/${encodeURIComponent(vin)}`,
+        poctra: `https://poctra.com/search?query=${encodeURIComponent(vin)}`,
+        copart: `https://www.copart.com/lotSearchResults?free=true&query=${encodeURIComponent(vin)}`,
+        iaai: `https://www.iaai.com/Search?SearchVehicleKeyword=${encodeURIComponent(vin)}`,
+      },
+    };
 
-const marketLow = 12000 + Math.floor(Math.random()*2000)
-const marketHigh = marketLow + 3000
-
-/* AUCTION INTELLIGENCE */
-
-const auctionPrice = marketLow - 2500
-const auctionLocation = "California"
-const auctionDamage = ["Front End","Rear Damage","Side Damage","Minor Dent"][Math.floor(Math.random()*4)]
-
-return NextResponse.json({
-
-make: car.Make,
-model: car.Model,
-year: car.ModelYear,
-engine: car.EngineModel,
-fuel: car.FuelTypePrimary,
-body: car.BodyClass,
-
-market_low: marketLow,
-market_high: marketHigh,
-
-auction_price: auctionPrice,
-auction_location: auctionLocation,
-auction_damage: auctionDamage
-
-})
-
+    return NextResponse.json(report);
+  } catch (error) {
+    console.error("vin-report error:", error);
+    return NextResponse.json(
+      { error: "Failed to build VIN report" },
+      { status: 500 }
+    );
+  }
 }
