@@ -1,59 +1,55 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Lead from "@/models/Lead";
-import Car from "@/models/Car";
 
-export async function POST(req: Request) {
+export async function GET() {
   try {
     await connectDB();
 
+    const leads = await Lead.find({})
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return NextResponse.json(leads);
+  } catch (error) {
+    console.error("GET /api/leads error:", error);
+    return NextResponse.json({ error: "Failed to fetch leads" }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
     const body = await req.json();
 
-    const { carId, customerName, phone, email, message } = body;
+    const name = String(body.name || "").trim();
+    const phone = String(body.phone || "").trim();
+    const email = String(body.email || "").trim();
+    const message = String(body.message || "").trim();
+    const source = String(body.source || "website").trim();
+    const vehicleId = body.vehicleId || null;
 
-    /* BASIC VALIDATION */
-
-    if (!carId || !customerName || !phone) {
+    if (!name || !phone) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Name and phone are required" },
         { status: 400 }
       );
     }
 
-    const car: any = await Car.findById(carId).lean();
-
-    if (!car) {
-      return NextResponse.json(
-        { error: "Car not found" },
-        { status: 404 }
-      );
-    }
-
-    /* CREATE LEAD */
+    await connectDB();
 
     const lead = await Lead.create({
-      dealerId: car.dealerId || null,
-      carId,
-      carTitle: `${car.year || ""} ${car.make || ""} ${car.model || ""}`.trim(),
-      customerName,
+      name,
       phone,
       email,
       message,
+      source,
+      vehicleId,
       status: "new",
     });
 
-    return NextResponse.json({
-      success: true,
-      leadId: lead._id,
-    });
-
-  } catch (error: any) {
-
-    console.error("LEAD ERROR:", error);
-
-    return NextResponse.json(
-      { error: "Lead creation failed" },
-      { status: 500 }
-    );
+    return NextResponse.json(lead, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/leads error:", error);
+    return NextResponse.json({ error: "Failed to create lead" }, { status: 500 });
   }
 }

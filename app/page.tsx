@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import LeadForm from "@/components/LeadForm";
 
 export default async function HomePage() {
 
@@ -52,6 +53,18 @@ export default async function HomePage() {
               View All
             </Link>
           </div>
+          <section className="mx-auto max-w-6xl px-6 py-14">
+  <div className="grid gap-6 md:grid-cols-2">
+    <div className="rounded-2xl border bg-white p-6">
+      <h2 className="text-2xl font-bold">Need help finding a car?</h2>
+      <p className="mt-2 text-gray-500">
+        Tell us what you want and we’ll reach out fast.
+      </p>
+    </div>
+
+    <LeadForm source="website" title="Contact Drive Prime Motors" />
+  </div>
+</section>
 
           <div className="grid md:grid-cols-3 gap-6">
 

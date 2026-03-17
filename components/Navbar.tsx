@@ -44,6 +44,12 @@ export default function Navbar() {
           </Link>
 
         </nav>
+        <a
+  href="/admin/leads"
+  className="border px-4 py-2 rounded-xl"
+>
+  Leads
+</a>
 
         {/* RIGHT SIDE */}
         <div className="flex items-center gap-3">
