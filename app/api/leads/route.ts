@@ -4,10 +4,28 @@ import Lead from "@/models/Lead";
 import nodemailer from "nodemailer";
 import Twilio from "twilio";
 
+// 🔥 BASE URL FIX
+const baseUrl =
+  process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+// 🔥 TWILIO
+const twilioClient = Twilio(
+  process.env.TWILIO_SID!,
+  process.env.TWILIO_AUTH!
+);
+
+// 🔥 PHONE FORMAT
+const formatPhone = (phone: string) => {
+  if (!phone.startsWith("+1")) {
+    return "+1" + phone.replace(/\D/g, "");
+  }
+  return phone;
+};
+
+// 🔥 AI REPLY
 async function generateAIReply(lead: any) {
-  const res = await fetch(
-    `${process.env.BASE_URL}/api/ai-reply`,
-    {
+  try {
+    const res = await fetch(`${baseUrl}/api/ai-reply`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -16,26 +34,14 @@ async function generateAIReply(lead: any) {
         name: lead.name,
         message: lead.message,
       }),
-    }
-  );
-  async function autoReplySMS(lead: any) {
-    const aiMessage = await generateAIReply(lead);
-  
-    await twilioClient.messages.create({
-      body: aiMessage,
-      from: process.env.TWILIO_PHONE,
-      to: lead.phone,
     });
-  }
-  const data = await res.json();
-  return data.text;
-}
 
-// 🔥 TWILIO
-const twilioClient = Twilio(
-  process.env.TWILIO_SID!,
-  process.env.TWILIO_AUTH!
-);
+    const data = await res.json();
+    return data.text || "Thanks for contacting us!";
+  } catch {
+    return "Thanks for contacting us!";
+  }
+}
 
 // 🔥 EMAIL (ADMIN)
 async function sendEmail(lead: any) {
@@ -59,7 +65,6 @@ async function sendEmail(lead: any) {
       <p><b>Phone:</b> ${lead.phone}</p>
       <p><b>Email:</b> ${lead.email}</p>
       <p><b>Message:</b> ${lead.message}</p>
-      <p><b>Source:</b> ${lead.source}</p>
     `,
   });
 }
@@ -90,23 +95,25 @@ async function autoReplyEmail(lead: any) {
 
 // 🔥 SMS (ADMIN)
 async function sendSMS(lead: any) {
-  if (!process.env.TWILIO_PHONE) return;
+  if (!process.env.TWILIO_PHONE || !process.env.MY_PHONE) return;
 
   await twilioClient.messages.create({
     body: `🚗 New Lead: ${lead.name} ${lead.phone}`,
     from: process.env.TWILIO_PHONE,
-    to: process.env.MY_PHONE!,
+    to: process.env.MY_PHONE,
   });
 }
 
-// 🔥 SMS (CUSTOMER)
+// 🔥 SMS (CUSTOMER - AI)
 async function autoReplySMS(lead: any) {
   if (!process.env.TWILIO_PHONE) return;
 
+  const aiMessage = await generateAIReply(lead);
+
   await twilioClient.messages.create({
-    body: `Hi ${lead.name}, thanks for contacting Drive Prime Motors. We'll call you shortly.`,
+    body: aiMessage,
     from: process.env.TWILIO_PHONE,
-    to: lead.phone,
+    to: formatPhone(lead.phone),
   });
 }
 
@@ -116,7 +123,7 @@ export async function GET() {
     await connectDB();
     const leads = await Lead.find().sort({ createdAt: -1 });
     return NextResponse.json(leads);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
@@ -135,10 +142,8 @@ export async function POST(req: Request) {
 
     await connectDB();
 
-    const dealerId = "64f000000000000000000001";
-
     const lead = await Lead.create({
-      dealerId,
+      dealerId: "64f000000000000000000001",
       carId: body.carId || null,
       name: body.name,
       phone: body.phone,
@@ -148,15 +153,13 @@ export async function POST(req: Request) {
       status: "new",
     });
 
-    // 🔥 AUTOMATION (ALL)
-    try {
-      await sendEmail(lead);
-      await autoReplyEmail(lead);
-      await sendSMS(lead);
-      await autoReplySMS(lead);
-    } catch (e) {
-      console.log("Automation error (skip):", e);
-    }
+    // 🔥 NON-BLOCKING AUTOMATION
+    Promise.allSettled([
+      sendEmail(lead),
+      autoReplyEmail(lead),
+      sendSMS(lead),
+      autoReplySMS(lead),
+    ]);
 
     return NextResponse.json(lead, { status: 201 });
 
