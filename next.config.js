@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    appDir: true, // 🔥 BUNU EKLE
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -15,7 +18,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "source.unsplash.com",   
+        hostname: "source.unsplash.com",
       },
       {
         protocol: "https",
