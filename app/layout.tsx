@@ -1,6 +1,7 @@
 import "./globals.css";
-import Footer from "../components/Footer";
+import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import Providers from "@/components/Providers";
 
 export const metadata = {
   title: "Drive Prime Motors LLC",
@@ -16,15 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
+        <Providers>
+          <Navbar />
 
-        <Navbar />
+          <main className="flex-1">{children}</main>
 
-        <main className="flex-1">
-          {children}
-        </main>
-
-        <Footer />
-
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

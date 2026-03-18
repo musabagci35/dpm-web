@@ -1,70 +1,95 @@
 import mongoose, { Schema, models, model } from "mongoose";
 
 const LeadSchema = new Schema(
-{
-dealerId:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Dealer",
-required:true,
-index:true
-},
+  {
+    // 🔑 Dealer bağlantısı (multi dealer system için şart)
+    dealerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Dealer",
+      required: true,
+      index: true,
+    },
 
-carId:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Car",
-default:null
-},
+    // 🚗 Araç bağlantısı (opsiyonel)
+    carId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Car",
+      default: null,
+    },
 
-vin:{
-type:String,
-default:"",
-index:true
-},
+    vin: {
+      type: String,
+      default: "",
+      index: true,
+    },
 
-carTitle:{
-type:String,
-default:""
-},
+    carTitle: {
+      type: String,
+      default: "",
+    },
 
-customerName:{
-type:String,
-default:""
-},
+    // 👤 CUSTOMER INFO
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-phone:{
-type:String,
-default:""
-},
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-email:{
-type:String,
-default:""
-},
+    email: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-message:{
-type:String,
-default:""
-},
+    message: {
+      type: String,
+      default: "",
+    },
 
-source:{
-type:String,
-enum:["vin","inventory","facebook","website"],
-default:"vin"
-},
+    // 📊 LEAD SOURCE
+    source: {
+      type: String,
+      enum: ["website", "inventory", "vin", "facebook", "walkin"],
+      default: "website",
+    },
 
-status:{
-type:String,
-enum:["new","contacted","won","lost"],
-default:"new",
-index:true
-}
+    // 📈 SALES PIPELINE
+    status: {
+      type: String,
+      enum: [
+        "new",
+        "contacted",
+        "qualified",
+        "appointment",
+        "won",
+        "lost",
+      ],
+      default: "new",
+      index: true,
+    },
 
-},
-{timestamps:true}
-)
+    // 📝 SALES NOTES
+    notes: {
+      type: String,
+      default: "",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-LeadSchema.index({dealerId:1,createdAt:-1})
+// 🔥 PERFORMANCE INDEXES
+LeadSchema.index({ dealerId: 1, createdAt: -1 });
+LeadSchema.index({ phone: 1 });
+LeadSchema.index({ status: 1 });
 
-const Lead = models.Lead || model("Lead",LeadSchema)
+const Lead = models.Lead || model("Lead", LeadSchema);
 
-export default Lead
+export default Lead;

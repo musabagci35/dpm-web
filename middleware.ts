@@ -1,37 +1,20 @@
-//import { NextResponse } from "next/server";
-//import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
-//export function middleware(req: NextRequest) {
- // const url = req.nextUrl;
+export default auth((req) => {
+  const isAdmin = req.nextUrl.pathname.startsWith("/admin");
 
-  // sadece admin koru
- // if (url.pathname.startsWith("/admin")) {
-   // const auth = req.headers.get("authorization");
+  if (isAdmin && !req.auth) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
 
-    //const username = process.env.ADMIN_USER;
-    //const password = process.env.ADMIN_PASS;
+  if (isAdmin && req.auth?.user?.role !== "admin") {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
 
-   // if (!auth) {
-      //return new Response("Auth required", {
-       // status: 401,
-       // headers: {
-        //  "WWW-Authenticate": 'Basic realm="Secure Area"',
-      //  },
-    //  });
-  //  }
+  return NextResponse.next();
+});
 
-   // const base64 = auth.split(" ")[1];
-   // const decoded = Buffer.from(base64, "base64").toString();
-   // const [user, pass] = decoded.split(":");
-
-    //if (user !== username || pass !== password) {
-    //  return new Response("Unauthorized", { status: 401 });
-    //}
-  //}
-
-  //return NextResponse.next();
-//}
-
-//export const config = {
- // matcher: ["/admin/:path*"],
-//}; 
+export const config = {
+  matcher: ["/admin/:path*"],
+};
