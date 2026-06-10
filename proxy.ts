@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import crypto from "crypto";
 
-const COOKIE_NAME = "dpm_admin_session";
-
-function sign(value: string) {
-  const secret = process.env.AUTH_SECRET || "fallback_secret";
-  return crypto.createHmac("sha256", secret).update(value).digest("hex");
-}
-
-function verifySessionValue(sessionValue: string) {
-  const [payload, signature] = sessionValue.split(".");
-  if (!payload || !signature) return false;
-  return sign(payload) === signature;
-}
+const COOKIE_NAME = "admin-token";
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -38,10 +26,9 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = req.cookies.get(COOKIE_NAME)?.value;
-  const authenticated = session ? verifySessionValue(session) : false;
+  const token = req.cookies.get(COOKIE_NAME)?.value;
 
-  if (!authenticated) {
+  if (!token) {
     const loginUrl = new URL("/admin/login", req.url);
     return NextResponse.redirect(loginUrl);
   }
