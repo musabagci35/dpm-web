@@ -2,176 +2,159 @@ import Link from "next/link";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
 import InventoryFilter from "@/components/InventoryFilter";
+import SortSelect from "@/components/SortSelect";
 
-export default async function InventoryPage({
-  searchParams,
-}: {
-  searchParams: Promise<any>;
-}) {
+// ✅ TYPE (Next 15 uyumlu)
+type Props = {
+  searchParams: Promise<{
+    search?: string;
+    make?: string;
+    model?: string;
+    price?: string;
+    year?: string;
+    mileage?: string;
+    sort?: string;
+  }>;
+};
 
-  const params = await searchParams;
+// ✅ REGEX SAFE
+function escapeRegex(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
-  await connectDB();
+export default async function InventoryPage({ searchParams }: Props) {
+  const params = (await searchParams) || {};
 
-  const query: any = {};
+  let cars: any[] = [];
 
-  /* SEARCH */
-  if (params?.search) {
-    query.$or = [
-      { make: { $regex: params.search, $options: "i" } },
-      { model: { $regex: params.search, $options: "i" } },
-    ];
+  try {
+    await connectDB();
+
+    const query: any = {
+      isActive: true,
+      status: { $nin: ["sold", "archived"] },
+    };
+
+    // 🔍 SEARCH
+    if (params.search) {
+      const safe = escapeRegex(params.search);
+      query.$or = [
+        { make: { $regex: safe, $options: "i" } },
+        { model: { $regex: safe, $options: "i" } },
+      ];
+    }
+
+    // 🔧 FILTERS
+    if (params.make) {
+      query.make = { $regex: escapeRegex(params.make), $options: "i" };
+    }
+
+    if (params.model) {
+      query.model = { $regex: escapeRegex(params.model), $options: "i" };
+    }
+
+    if (params.price && !isNaN(Number(params.price))) {
+      query.price = { $lte: Number(params.price) };
+    }
+
+    if (params.year && !isNaN(Number(params.year))) {
+      query.year = { $gte: Number(params.year) };
+    }
+
+    if (params.mileage && !isNaN(Number(params.mileage))) {
+      query.mileage = { $lte: Number(params.mileage) };
+    }
+
+    // 🔄 SORT
+    let sortOption: any = { isFeatured: -1, createdAt: -1 };
+
+    if (params.sort === "price-low") sortOption = { price: 1 };
+    if (params.sort === "price-high") sortOption = { price: -1 };
+    if (params.sort === "mileage") sortOption = { mileage: 1 };
+
+    const carsRaw = await Car.find(query).sort(sortOption).lean();
+
+    cars = carsRaw.map((car: any) => ({
+      ...car,
+      _id: car._id.toString(),
+    }));
+  } catch (err) {
+    console.error("Inventory error:", err);
   }
-
-  if (params?.make) {
-    query.make = { $regex: params.make, $options: "i" };
-  }
-
-  if (params?.model) {
-    query.model = { $regex: params.model, $options: "i" };
-  }
-
-  if (params?.price) {
-    query.price = { $lte: Number(params.price) };
-  }
-
-  if (params?.year) {
-    query.year = { $gte: Number(params.year) };
-  }
-
-  if (params?.mileage) {
-    query.mileage = { $lte: Number(params.mileage) };
-  }
-
-  /* FETCH */
-  const carsRaw = await Car.find(query)
-    .sort({ createdAt: -1 })
-    .lean();
-
-  /* FIX OBJECTID */
-  const cars = carsRaw.map((car: any) => ({
-    ...car,
-    _id: car._id.toString(),
-  }));
 
   return (
     <main className="min-h-screen bg-gray-50">
-
       {/* HEADER */}
-      <section className="bg-black text-white py-14">
-        <div className="max-w-6xl mx-auto px-6">
-
-          <h1 className="text-4xl font-extrabold">
-            Available Inventory
-          </h1>
-
-          <p className="text-white/70 mt-2">
-            Browse quality pre-owned vehicles from Drive Prime Motors.
+      <section className="bg-black py-14 text-white">
+        <div className="mx-auto max-w-7xl px-6">
+          <h1 className="text-4xl font-bold">Available Inventory</h1>
+          <p className="mt-2 text-white/70">
+            Browse vehicles from Drive Prime Motors
           </p>
-
         </div>
       </section>
 
-      {/* INVENTORY */}
-      <section className="max-w-6xl mx-auto px-6 py-14">
-
+      {/* CONTENT */}
+      <section className="mx-auto max-w-7xl px-6 py-12">
         <InventoryFilter />
 
-        {cars.length === 0 ? (
-
-          <p className="text-center text-gray-500 mt-10">
-            No vehicles found.
+        {/* SORT */}
+        <div className="mb-6 mt-6 flex justify-between">
+          <p className="text-sm text-gray-500">
+            {cars.length} vehicles found
           </p>
 
+          <SortSelect currentSort={params.sort} />
+        </div>
+
+        {/* EMPTY */}
+        {cars.length === 0 ? (
+          <div className="bg-white p-10 text-center rounded">
+            <h2>No vehicles found</h2>
+          </div>
         ) : (
-
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {cars.map((car: any) => {
-
-              const carId = car._id;
-
-              const title =
-                `${car.year} ${car.make} ${car.model}`;
-
-              const price =
-                Number(car.price || car.marketPrice || 0);
-
-              const mileage =
-                car.mileage ? Number(car.mileage) : null;
-
-              const monthly =
-                price ? Math.round((price * 1.15) / 60) : 0;
+              const price = Number(car.price || 0);
+              const title = `${car.year} ${car.make} ${car.model}`;
+              const firstImage = car.images?.[0]?.url;
 
               const image =
-                car.images?.[0]?.url ||
-                "/car-placeholder.jpg";
+                firstImage && firstImage.startsWith("http")
+                  ? firstImage
+                  : "/car.png";
 
               return (
-
-                <div
-                  key={carId}
-                  className="overflow-hidden rounded-2xl border bg-white shadow hover:shadow-xl transition"
-                >
-
+                <div key={car._id} className="bg-white p-4 rounded shadow">
                   <img
                     src={image}
                     alt={title}
-                    className="h-52 w-full object-cover"
+                    className="w-full h-48 object-cover"
                   />
+{car.isFeatured && (
+  <span className="inline-block mt-3 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
+    Featured
+  </span>
+)}
 
-                  <div className="p-6">
+                  <h3 className="mt-3 font-bold">{title}</h3>
 
-                    <h3 className="text-lg font-bold">
-                      {title}
-                    </h3>
+                  <p className="text-green-600 font-bold">
+                    ${price.toLocaleString()}
+                  </p>
 
-                    {mileage && (
-                      <p className="text-sm text-gray-500">
-                        {mileage.toLocaleString()} miles
-                      </p>
-                    )}
-
-                    <p className="mt-2 text-2xl font-extrabold text-red-600">
-                      ${price.toLocaleString()}
-                    </p>
-
-                    <p className="text-sm text-gray-600">
-                      Est. ${monthly.toLocaleString()} / month
-                    </p>
-
-                    <div className="mt-4 flex justify-between">
-
-                      <Link
-                        href={`/inventory/${carId}`}
-                        className="bg-black text-white px-4 py-2 rounded-lg text-sm"
-                      >
-                        View Details
-                      </Link>
-
-                      <Link
-                        href="/financing"
-                        className="text-blue-600 text-sm font-semibold"
-                      >
-                        Get Approved →
-                      </Link>
-
-                    </div>
-
-                  </div>
-
+                  <Link
+                   href={`/inventory/${car.slug || car._id}`}
+                    className="block mt-3 bg-black text-white text-center py-2 rounded"
+                  >
+                    View Details
+                  </Link>
                 </div>
-
               );
-
             })}
-
           </div>
-
         )}
-
       </section>
-
     </main>
   );
 }

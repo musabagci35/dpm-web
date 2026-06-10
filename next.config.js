@@ -2,26 +2,10 @@
 const nextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "source.unsplash.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "cdn.imagin.studio",
-        pathname: "/**",
-      },
+      { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
+      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
+      { protocol: "https", hostname: "source.unsplash.com", pathname: "/**" },
+      { protocol: "https", hostname: "cdn.imagin.studio", pathname: "/**" },
     ],
   },
 
@@ -29,7 +13,11 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
 
+  // 🔥 EKLE BUNU (EN ÖNEMLİ)
+  output: "standalone",
 
+  // 🔥 PRERENDER’I ÖLDÜRÜR
+  
 
   async headers() {
     return [

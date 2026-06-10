@@ -2,7 +2,6 @@ import mongoose, { Schema, models, model } from "mongoose";
 
 const LeadSchema = new Schema(
   {
-    // 🔑 Dealer bağlantısı (multi dealer system için şart)
     dealerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Dealer",
@@ -10,7 +9,6 @@ const LeadSchema = new Schema(
       index: true,
     },
 
-    // 🚗 Araç bağlantısı (opsiyonel)
     carId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Car",
@@ -28,7 +26,7 @@ const LeadSchema = new Schema(
       default: "",
     },
 
-    // 👤 CUSTOMER INFO
+    // 👤 CUSTOMER
     name: {
       type: String,
       required: true,
@@ -39,6 +37,7 @@ const LeadSchema = new Schema(
       type: String,
       required: true,
       trim: true,
+      index: true,
     },
 
     email: {
@@ -52,14 +51,15 @@ const LeadSchema = new Schema(
       default: "",
     },
 
-    // 📊 LEAD SOURCE
+    // 📊 SOURCE
     source: {
       type: String,
       enum: ["website", "inventory", "vin", "facebook", "walkin"],
       default: "website",
+      index: true,
     },
 
-    // 📈 SALES PIPELINE
+    // 🔥 SALES PIPELINE
     status: {
       type: String,
       enum: [
@@ -74,7 +74,29 @@ const LeadSchema = new Schema(
       index: true,
     },
 
-    // 📝 SALES NOTES
+    // 🧠 PRIORITY (AUTO SET)
+    priority: {
+      type: String,
+      enum: ["cold", "warm", "hot"],
+      default: "cold",
+      index: true,
+    },
+
+    followUpDate: {
+      type: Date,
+      default: null,
+    },
+
+    lastContactedAt: {
+      type: Date,
+      default: null,
+    },
+
+    convertedAt: {
+      type: Date,
+      default: null,
+    },
+
     notes: {
       type: String,
       default: "",
@@ -85,10 +107,26 @@ const LeadSchema = new Schema(
   }
 );
 
-// 🔥 PERFORMANCE INDEXES
+
+// 🔥 SMART INDEXES (çok önemli performans)
 LeadSchema.index({ dealerId: 1, createdAt: -1 });
-LeadSchema.index({ phone: 1 });
-LeadSchema.index({ status: 1 });
+LeadSchema.index({ dealerId: 1, phone: 1 }); // duplicate kontrol
+LeadSchema.index({ status: 1, priority: 1 });
+LeadSchema.index({ followUpDate: 1 });
+
+
+// 🔥 AUTO PRIORITY (AI gibi çalışır)
+LeadSchema.pre("save", function (next) {
+  if (this.message?.toLowerCase().includes("price")) {
+    this.priority = "hot";
+  } else if (this.message?.length > 25) {
+    this.priority = "warm";
+  } else {
+    this.priority = "cold";
+  }
+  next();
+});
+
 
 const Lead = models.Lead || model("Lead", LeadSchema);
 

@@ -19,6 +19,17 @@ export default function Footer() {
 
         {/* LINKS */}
         <div>
+        <li>
+  <Link href="/parts" className="hover:text-red-600">
+    Auto Parts
+  </Link>
+</li>
+
+<li>
+  <Link href="/sell-your-car" className="hover:text-red-600">
+    Sell Your Car
+  </Link>
+</li>
           <h4 className="font-semibold text-gray-900 mb-2">
             Quick Links
           </h4>
@@ -45,24 +56,48 @@ export default function Footer() {
 
           </ul>
         </div>
+{/* CONTACT */}
+<div>
+  <h4 className="font-semibold text-gray-900 mb-2">
+    Contact
+  </h4>
 
-        {/* CONTACT */}
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-2">
-            Contact
-          </h4>
+  <p className="text-gray-500">
+    Rancho Cordova, CA
+  </p>
 
-          <p className="text-gray-500">
-            Sacramento, California
-          </p>
+  <a
+    href="tel:+19162618880"
+    className="text-gray-500 hover:text-red-600 block mt-1"
+  >
+    (916) 261-8880
+  </a>
 
-          <a
-            href="tel:+19162618880"
-            className="text-gray-500 hover:text-red-600 block mt-1"
-          >
-            916-261-8880
-          </a>
-        </div>
+  <a
+    href="mailto:sales@driveprimemotors.com"
+    className="text-gray-500 hover:text-red-600 block mt-1"
+  >
+    sales@driveprimemotors.com
+  </a>
+
+  <div className="mt-4">
+    <h5 className="font-semibold text-gray-900">
+      Business Hours
+    </h5>
+
+    <p className="text-gray-500 mt-1">
+      Mon-Fri: 9AM - 6PM
+    </p>
+
+    <p className="text-gray-500">
+      Sat: By Appointment
+    </p>
+
+    <p className="text-gray-500">
+      Sun: Closed
+    </p>
+  </div>
+</div>
 
       </div>
 

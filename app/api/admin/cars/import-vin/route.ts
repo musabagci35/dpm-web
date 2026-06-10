@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
 import VinHistory from "@/models/VinHistory";
-import { postToFacebook } from "@/lib/facebookPost";
 
 export async function POST(req: Request) {
   try {
@@ -67,10 +66,12 @@ export async function POST(req: Request) {
     const model = vehicle.Model || "Unknown";
     const year = Number(vehicle.ModelYear) || 2000;
     const trim = vehicle.Trim || "";
+
     const engine = vehicle.EngineModel || "";
     const fuel = vehicle.FuelTypePrimary || "";
     const body = vehicle.BodyClass || "";
-    const manufacturer = vehicle.Manufacturer || vehicle.ManufacturerName || "";
+    const manufacturer =
+      vehicle.Manufacturer || vehicle.ManufacturerName || "";
     const doors = vehicle.Doors || "";
 
     const image = `https://cdn.imagin.studio/getimage?customer=img&make=${encodeURIComponent(
@@ -78,6 +79,8 @@ export async function POST(req: Request) {
     )}&modelFamily=${encodeURIComponent(
       model
     )}&modelYear=${year}&zoomType=fullscreen&angle=front`;
+
+    const safeImage = image || "/car-placeholder.jpg";
 
     const title = `${year} ${make} ${model}${trim ? ` ${trim}` : ""}`;
 
@@ -100,56 +103,27 @@ A great choice for daily commuting or long-distance travel, offering comfort, re
       model,
       trim,
 
-      titleStatus: "unknown",
-      salvage: false,
-      flood: false,
-      junk: false,
-      odometerStatus: "unknown",
-
       price: 0,
-      marketPrice: 0,
       mileage: 0,
 
       vin: cleanVin,
-      stockNumber: "",
-
-      condition: "used",
-      drivetrain: "",
-      transmission: "",
-      fuelType: fuel,
-      bodyStyle: body,
-      exteriorColor: "",
-      interiorColor: "",
       description,
 
       images: [
         {
-          url: image,
+          url: safeImage,
           publicId: "",
+          isCover: true,
         },
       ],
 
-      auctionPhotos: [],
-
-      vehicleHistory: {
-        title: "unknown",
-        odometer: "unknown",
-        accidents: 0,
-        salvage: false,
-        flood: false,
-        junk: false,
-      },
-
-      facebookListing: {
-        posted: false,
-        productId: "",
-        lastPostedAt: null,
-      },
-
-      dealerId: new mongoose.Types.ObjectId(dealerId),
-
-      isActive: false,
+      status: "available",
+      isActive: true,
       isFeatured: false,
+
+      cost: 0,
+      recon: 0,
+      docFee: 0,
 
       marketing: {
         facebookPosted: false,
@@ -160,8 +134,12 @@ A great choice for daily commuting or long-distance travel, offering comfort, re
         lastMarketingRunAt: null,
       },
 
+      dealerId: new mongoose.Types.ObjectId(dealerId),
+
       // extra decoded values
       engine,
+      fuelType: fuel,
+      bodyStyle: body,
       doors,
       manufacturer,
     });
@@ -172,12 +150,6 @@ A great choice for daily commuting or long-distance travel, offering comfort, re
       model,
       year,
     });
-
-    try {
-      await postToFacebook(car);
-    } catch (facebookError) {
-      console.log("Facebook post failed:", facebookError);
-    }
 
     return NextResponse.json({
       success: true,

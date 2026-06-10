@@ -1,87 +1,254 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import PhotoManager from "@/components/admin/PhotoManager";
 
-const DEALER_ID = "69ab61daaef42746175b0a9b";
-
-export default function AddCarPage() {
-  const router = useRouter();
-  const [vin, setVin] = useState("");
+export default function AddCar() {
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [vinLoading, setVinLoading] = useState(false);
+  const [images, setImages] = useState<any[]>([]);
+  const [status, setStatus] = useState("available");
+  const [isFeatured, setIsFeatured] = useState(false);
 
-  async function importVin() {
-    const clean = vin.trim().toUpperCase();
+  async function decodeVin() {
+    const vinInput =
+      document.querySelector<HTMLInputElement>('input[name="vin"]');
 
-    if (!clean) {
-      setMsg("Please enter a VIN.");
+    const vin = vinInput?.value.trim();
+
+    if (!vin || vin.length !== 17) {
+      alert("Please enter a valid 17-character VIN");
       return;
     }
 
-    if (clean.length !== 17) {
-      setMsg("VIN must be 17 characters.");
-      return;
-    }
+    setVinLoading(true);
 
     try {
-      setLoading(true);
-      setMsg(null);
-
-      const res = await fetch("/api/admin/cars/import-vin", {
+      const res = await fetch("/api/vin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vin: clean,
-          dealerId: DEALER_ID,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vin }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setMsg(data?.error || "Import failed");
+        alert(data.error || "VIN decode failed");
         return;
       }
 
-      router.push(`/admin/edit-car/${data.carId}`);
+      const form = document.querySelector("form") as HTMLFormElement;
+
+      const yearInput = form.elements.namedItem(
+        "year"
+      ) as HTMLInputElement | null;
+
+      const makeInput = form.elements.namedItem(
+        "make"
+      ) as HTMLInputElement | null;
+
+      const modelInput = form.elements.namedItem(
+        "model"
+      ) as HTMLInputElement | null;
+
+      const titleInput = form.elements.namedItem(
+        "title"
+      ) as HTMLInputElement | null;
+
+      const descriptionInput = form.elements.namedItem(
+        "description"
+      ) as HTMLTextAreaElement | null;
+
+      if (yearInput) yearInput.value = data.year || "";
+      if (makeInput) makeInput.value = data.make || "";
+      if (modelInput) modelInput.value = data.model || "";
+
+      if (titleInput) {
+        titleInput.value =
+          `${data.year || ""} ${data.make || ""} ${data.model || ""}`.trim();
+      }
+
+      if (descriptionInput) {
+        descriptionInput.value = `
+${data.year || ""} ${data.make || ""} ${data.model || ""}
+
+Engine: ${data.engine || "N/A"}
+Fuel: ${data.fuel || "N/A"}
+Body Style: ${data.body || "N/A"}
+
+This vehicle is available now at Drive Prime Motors.
+Contact us today to schedule a test drive or financing options.
+        `.trim();
+      }
     } catch (error) {
-      console.error("VIN import request failed:", error);
-      setMsg("Something went wrong while importing the VIN.");
+      console.error(error);
+      alert("VIN decode failed");
     } finally {
-      setLoading(false);
+      setVinLoading(false);
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    setLoading(true);
+
+    const form = e.currentTarget;
+const formData = new FormData(form);
+
+const payload = {
+  title: String(formData.get("title") || ""),
+  vin: String(formData.get("vin") || ""),
+  price: Number(formData.get("price") || 0),
+  year: Number(formData.get("year") || 0),
+  make: String(formData.get("make") || ""),
+  model: String(formData.get("model") || ""),
+  mileage: Number(formData.get("mileage") || 0),
+  titleStatus: String(formData.get("titleStatus") || "unknown"),
+  description: String(formData.get("description") || ""),
+  images,
+  status,
+  isFeatured,
+};
+
+    try {
+      const res = await fetch("/api/cars", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        alert("Car added 🚗");
+
+        form.reset();
+        setImages([]);
+        setStatus("available");
+        setIsFeatured(false);
+      } else {
+        alert(result.error || "Error");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="text-3xl font-bold">Import Vehicle by VIN</h1>
-      <p className="mt-2 text-gray-600">
-        Enter a VIN to automatically create a draft vehicle listing.
-        You will be redirected to the edit page to complete the details.
-      </p>
+    <div className="p-10 max-w-3xl">
+      <h1 className="text-2xl font-bold mb-6">Add Car</h1>
 
-      <div className="mt-8 flex gap-3">
-        <input
-          value={vin}
-          onChange={(e) => setVin(e.target.value)}
-          placeholder="Enter 17-digit VIN"
-          className="flex-1 rounded-xl border px-4 py-3"
-        />
-        <button
-          onClick={importVin}
-          disabled={loading}
-          className="rounded-xl bg-black px-6 py-3 text-white disabled:opacity-60"
-        >
-          {loading ? "Importing..." : "Import"}
-        </button>
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex gap-2">
+          <input
+            name="vin"
+            placeholder="VIN"
+            className="border p-2 w-full"
+          />
 
-      {msg && (
-        <div className="mt-4 rounded-xl border bg-white p-4 text-sm text-red-600">
-          {msg}
+          <button
+            type="button"
+            onClick={decodeVin}
+            className="bg-blue-600 text-white px-4 rounded"
+          >
+            {vinLoading ? "Decoding..." : "Decode VIN"}
+          </button>
         </div>
-      )}
+
+        <input
+          name="title"
+          placeholder="Title"
+          className="border p-2 w-full"
+        />
+
+        <input
+          name="price"
+          type="number"
+          placeholder="Price"
+          className="border p-2 w-full"
+        />
+
+        <input
+          name="year"
+          type="number"
+          placeholder="Year"
+          className="border p-2 w-full"
+        />
+
+        <input
+          name="make"
+          placeholder="Make"
+          className="border p-2 w-full"
+        />
+
+        <input
+          name="model"
+          placeholder="Model"
+          className="border p-2 w-full"
+        />
+
+        <input
+          name="mileage"
+          type="number"
+          placeholder="Mileage"
+          className="border p-2 w-full"
+        />
+
+        <select name="titleStatus" className="border p-2 w-full">
+          <option value="clean">Clean Title</option>
+          <option value="salvage">Salvage Title</option>
+          <option value="rebuilt">Rebuilt Title</option>
+          <option value="lemon">Lemon / Buyback</option>
+          <option value="unknown">Unknown</option>
+        </select>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="border p-3 rounded-xl"
+          >
+            <option value="available">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+            <option value="archived">Archived</option>
+          </select>
+
+          <label className="border p-3 rounded-xl flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+            />
+            Featured Vehicle
+          </label>
+        </div>
+
+        <textarea
+          name="description"
+          placeholder="Description"
+          className="border p-2 w-full"
+          rows={6}
+        />
+
+        <PhotoManager value={images} onChange={setImages} />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-black text-white px-4 py-2 w-full disabled:opacity-60"
+        >
+          {loading ? "Adding..." : "Add Car"}
+        </button>
+      </form>
     </div>
   );
 }

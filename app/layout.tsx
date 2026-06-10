@@ -4,9 +4,26 @@ import Navbar from "@/components/Navbar";
 import Providers from "@/components/Providers";
 
 export const metadata = {
-  title: "Drive Prime Motors LLC",
-  description:
-    "Browse quality used vehicles at Drive Prime Motors LLC. Easy financing, transparent pricing, and trusted service in California.",
+  metadataBase: new URL("https://driveprimemotors.com"),
+
+  title: {
+    default: "Drive Prime Motors",
+    template: "%s | Drive Prime Motors",
+  },
+
+  description: "Premium used cars in California",
+
+  icons: {
+    icon: "/favicon.ico",
+  },
+
+  openGraph: {
+    title: "Drive Prime Motors",
+    description: "Premium used cars in California",
+    url: "https://driveprimemotors.com",
+    siteName: "Drive Prime Motors",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -16,12 +33,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
+      <body className="min-h-screen flex flex-col bg-[#f8fafc] text-gray-900">
         <Providers>
           <Navbar />
-
           <main className="flex-1">{children}</main>
-
           <Footer />
         </Providers>
       </body>

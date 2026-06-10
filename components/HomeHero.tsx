@@ -3,6 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+const quickFilters = [
+  { label: "Under $15k", query: "price=15000" },
+  { label: "Low Mileage", query: "mileage=50000" },
+  { label: "SUV", query: "body=SUV" },
+  { label: "Sedan", query: "body=Sedan" },
+];
+
 export default function HomeHero() {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -10,12 +17,7 @@ export default function HomeHero() {
   const handleSearch = () => {
     const value = search.trim();
     if (!value) return;
-
     router.push(`/inventory?search=${encodeURIComponent(value)}`);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSearch();
   };
 
   return (
@@ -29,19 +31,18 @@ export default function HomeHero() {
         </h1>
 
         <p className="mt-4 text-gray-300 max-w-2xl mx-auto">
-          Browse quality used vehicles at Drive Prime Motors LLC.
-          Fast financing approvals and transparent pricing.
+          Browse quality vehicles with transparent pricing and fast approvals.
         </p>
 
-        {/* SEARCH BAR */}
-        <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+        {/* 🔥 SEARCH */}
+        <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center relative">
 
           <input
-            className="w-full sm:w-[420px] px-4 py-3 rounded-xl text-black outline-none"
+            className="w-full sm:w-[420px] px-4 py-3 rounded-xl text-black outline-none focus:ring-2 focus:ring-red-500"
             placeholder="Search make, model, or year..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
 
           <button
@@ -53,7 +54,22 @@ export default function HomeHero() {
 
         </div>
 
-        {/* CTA BUTTONS */}
+        {/* 🔥 QUICK FILTERS (CARVANA FEEL) */}
+        <div className="mt-6 flex flex-wrap justify-center gap-2 text-sm">
+
+          {quickFilters.map((item, i) => (
+            <button
+              key={i}
+              onClick={() => router.push(`/inventory?${item.query}`)}
+              className="px-3 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition"
+            >
+              {item.label}
+            </button>
+          ))}
+
+        </div>
+
+        {/* 🔥 CTA BUTTONS */}
         <div className="mt-8 flex flex-wrap justify-center gap-4">
 
           <button
@@ -67,39 +83,38 @@ export default function HomeHero() {
             onClick={() => router.push("/financing")}
             className="border border-white/40 px-6 py-3 rounded-xl font-semibold hover:bg-white/10"
           >
-            Apply for Financing
+            Get Approved
           </button>
 
         </div>
 
-        {/* TRUST BADGES */}
+        {/* 🔥 TRUST (UPGRADED) */}
         <div className="mt-14 grid gap-6 md:grid-cols-3 text-sm text-gray-300">
 
           <div>
             <strong className="block text-white">
-              Dealer Inspected
+              ✔ Dealer Inspected
             </strong>
-            Quality vehicles inspected before sale
+            Every vehicle checked before sale
           </div>
 
           <div>
             <strong className="block text-white">
-              Easy Financing
+              ✔ Easy Financing
             </strong>
-            Multiple lenders for all credit types
+            All credit types welcome
           </div>
 
           <div>
             <strong className="block text-white">
-              Transparent Pricing
+              ✔ No Hidden Fees
             </strong>
-            No hidden fees or surprises
+            Transparent pricing guaranteed
           </div>
 
         </div>
 
       </div>
-
     </section>
   );
 }

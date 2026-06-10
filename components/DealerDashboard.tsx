@@ -1,34 +1,63 @@
-import DealerDashboard from "@/components/DealerDashboard";
 
-export default function DealerPage() {
 
-  const latestCars = [
-    { year: 2021, make: "BMW", model: "X5", price: 45000 },
-    { year: 2019, make: "Audi", model: "A6", price: 32000 },
-  ];
+type Props = {
+  totalCars: number;
+  liveCars: number;
+  latestCars: {
+    year: number;
+    make: string;
+    model: string;
+    price: number;
+  }[];
+  vinHistory: {
+    year: number;
+    make: string;
+    model: string;
+  }[];
+};
 
-  const vinHistory = [
-    { year: 2020, make: "Toyota", model: "Camry" }
-  ];
-
+export default function DealerDashboard({
+  totalCars,
+  liveCars,
+  latestCars,
+  vinHistory,
+}: Props) {
   return (
-    <main className="max-w-6xl mx-auto px-6 py-10">
+    <div className="space-y-6">
 
-      <h1 className="text-3xl font-bold mb-2">
-        Dealer Dashboard
-      </h1>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-white shadow rounded">
+          <p className="text-gray-500">Total Cars</p>
+          <h2 className="text-2xl font-bold">{totalCars}</h2>
+        </div>
 
-      <p className="text-gray-500 mb-6">
-        Quick overview of inventory
-      </p>
+        <div className="p-4 bg-white shadow rounded">
+          <p className="text-gray-500">Live Cars</p>
+          <h2 className="text-2xl font-bold">{liveCars}</h2>
+        </div>
+      </div>
 
-      <DealerDashboard
-        totalCars={12}
-        liveCars={10}
-        latestCars={latestCars}
-        vinHistory={vinHistory}
-      />
+      {/* Latest Cars */}
+      <div>
+        <h3 className="font-semibold mb-2">Latest Cars</h3>
+        {latestCars.map((car, i) => (
+          <div key={i} className="border-b py-2">
+            {car.year} {car.make} {car.model} - ${car.price}
+          </div>
+        ))}
+      </div>
 
-    </main>
+      {/* VIN History */}
+      <div>
+        <h3 className="font-semibold mb-2">VIN History</h3>
+        {vinHistory.map((car, i) => (
+          <div key={i} className="border-b py-2">
+            {car.year} {car.make} {car.model}
+          </div>
+        ))}
+      </div>
+
+    </div>
   );
 }

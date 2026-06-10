@@ -44,7 +44,7 @@ https://driveprimemotorsllc.com/inventory/${car._id}
 
 const image =
 car.images?.[0]?.url ||
-"https://source.unsplash.com/featured/?car"
+"/car-placeholder.jpg"
 
 const url = `https://graph.facebook.com/v19.0/${pageId}/photos`
 

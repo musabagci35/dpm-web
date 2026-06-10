@@ -1,47 +1,81 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-export default function AdminLoginPage() {
+import { useEffect } from "react";
+export default function AdminLogin() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    const res = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
+    setLoading(true);
+    setError("");
 
-    if (res.ok) {
-      router.push("/admin");
-    } else {
-      alert("Wrong password");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      console.log("LOGIN RESPONSE:", data);
+
+      if (res.ok) {
+        window.location.replace("/admin/dashboard");
+      } else {
+        setError(data.error || "Invalid email or password");
+      }
+    } catch (err) {
+      setError("Something went wrong");
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="border p-10 rounded-xl w-96">
-        <h1 className="text-2xl font-bold mb-6">
-          Admin Login
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md space-y-6">
+
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Drive Prime Motors</h1>
+          <p className="text-gray-500 text-sm">Admin Panel</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-100 text-red-600 p-2 rounded text-sm">
+            {error}
+          </div>
+        )}
+
+        <input
+          type="email"
+          placeholder="Email"
+          className="border p-3 w-full rounded-lg"
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
         <input
           type="password"
           placeholder="Password"
-          className="w-full border p-3 mb-4"
-          value={password}
+          className="border p-3 w-full rounded-lg"
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button
-          onClick={handleLogin}
-          className="w-full bg-black text-white py-3 rounded-lg"
-        >
-          Login
+<button
+  type="button"   // 🔥 EKLE
+  onClick={handleLogin}
+  disabled={loading}
+  className="w-full bg-black text-white py-3 rounded-lg"
+>
+          {loading ? "Logging in..." : "Login"}
         </button>
+
       </div>
     </div>
   );

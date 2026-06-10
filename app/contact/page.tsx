@@ -21,7 +21,7 @@ export default function ContactPage() {
     e.preventDefault();
     setLoading(true);
 
-    const res = await fetch("/api/contact", {
+    const res = await fetch("/api/leads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),

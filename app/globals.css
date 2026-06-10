@@ -34,3 +34,65 @@ body {
   background-color: #f9fafb; /* gray-50 */
   color: #111827; /* gray-900 */
 }
+
+/* PREMIUM BASE */
+body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* CONTAINER */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* CARD */
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  border: 1px solid #e5e7eb;
+}
+
+/* BUTTON */
+.btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.btn-primary {
+  background: black;
+  color: white;
+}
+
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.btn-outline {
+  border: 1px solid #ddd;
+}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+/* TITLE */
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}

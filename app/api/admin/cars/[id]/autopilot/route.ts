@@ -9,20 +9,20 @@ export async function POST(_req: Request, { params }: Ctx) {
 
   await connectDB();
 
-  const car = await Car.findById(id).lean();
-
-  if (!car) {
-    return NextResponse.json({ error: "Car not found" }, { status: 404 });
-  }
-
-  /* Website publish */
-  const updated = await Car.findByIdAndUpdate(
+  const updated: any = await Car.findByIdAndUpdate(
     id,
     { isActive: true },
     { new: true }
   ).lean();
 
-  /* eBay payload (stub – gerçek API için token gerekir) */
+  if (!updated) {
+    return NextResponse.json(
+      { error: "Updated car not found" },
+      { status: 404 }
+    );
+  }
+
+  /* eBay payload */
   const ebayPayload = {
     sku: id,
     title: updated.title,

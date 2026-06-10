@@ -4,7 +4,7 @@ type Props = {
   
   export default function VehicleHistoryPanel({ vin }: Props) {
     const cleanVin = vin?.trim() || "";
-    const reportUrl = `/api/vin-report?vin=${encodeURIComponent(cleanVin)}`;
+    const reportUrl = `/vin/${encodeURIComponent(cleanVin)}`;
   
     return (
       <div className="rounded-2xl border bg-white p-5">

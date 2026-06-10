@@ -2,17 +2,10 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Lead from "@/models/Lead";
 import nodemailer from "nodemailer";
-import Twilio from "twilio";
 
-// 🔥 BASE URL FIX
+// 🔥 BASE URL
 const baseUrl =
   process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-// 🔥 TWILIO
-const twilioClient = Twilio(
-  process.env.TWILIO_SID!,
-  process.env.TWILIO_AUTH!
-);
 
 // 🔥 PHONE FORMAT
 const formatPhone = (phone: string) => {
@@ -93,11 +86,25 @@ async function autoReplyEmail(lead: any) {
   });
 }
 
+// 🔥 TWILIO HELPER (CRITICAL FIX)
+async function getTwilioClient() {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+  if (!accountSid || !accountSid.startsWith("AC") || !authToken) {
+    return null;
+  }
+
+  const twilio = await import("twilio");
+  return twilio.default(accountSid, authToken);
+}
+
 // 🔥 SMS (ADMIN)
 async function sendSMS(lead: any) {
-  if (!process.env.TWILIO_PHONE || !process.env.MY_PHONE) return;
+  const client = await getTwilioClient();
+  if (!client || !process.env.TWILIO_PHONE || !process.env.MY_PHONE) return;
 
-  await twilioClient.messages.create({
+  await client.messages.create({
     body: `🚗 New Lead: ${lead.name} ${lead.phone}`,
     from: process.env.TWILIO_PHONE,
     to: process.env.MY_PHONE,
@@ -106,11 +113,12 @@ async function sendSMS(lead: any) {
 
 // 🔥 SMS (CUSTOMER - AI)
 async function autoReplySMS(lead: any) {
-  if (!process.env.TWILIO_PHONE) return;
+  const client = await getTwilioClient();
+  if (!client || !process.env.TWILIO_PHONE) return;
 
   const aiMessage = await generateAIReply(lead);
 
-  await twilioClient.messages.create({
+  await client.messages.create({
     body: aiMessage,
     from: process.env.TWILIO_PHONE,
     to: formatPhone(lead.phone),
@@ -153,8 +161,8 @@ export async function POST(req: Request) {
       status: "new",
     });
 
-    // 🔥 NON-BLOCKING AUTOMATION
-    Promise.allSettled([
+    // 🔥 NON-BLOCKING
+    void Promise.allSettled([
       sendEmail(lead),
       autoReplyEmail(lead),
       sendSMS(lead),

@@ -1,34 +1,40 @@
 import { NextResponse } from "next/server";
-import cloudinary from "@/lib/cloudinary";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: Request) {
+  try {
+    const body = await req.json();
 
-  const data = await req.formData();
-  const files = data.getAll("files") as File[];
+    const file = body.file;
 
-  const uploaded = [];
+    if (!file) {
+      return NextResponse.json(
+        { error: "No file" },
+        { status: 400 }
+      );
+    }
 
-  for (const file of files) {
+    const uploaded = await cloudinary.uploader.upload(file, {
+      folder: "driveprimemotors/parts",
+    });
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    return NextResponse.json({
+      success: true,
+      url: uploaded.secure_url,
+      publicId: uploaded.public_id,
+    });
+  } catch (error) {
+    console.error(error);
 
-    const result:any = await new Promise((resolve,reject)=>{
-
-      cloudinary.uploader.upload_stream(
-        { folder: "cars" },
-        (err,result)=>{
-          if(err) reject(err)
-          resolve(result)
-        }
-      ).end(buffer)
-
-    })
-
-    uploaded.push(result.secure_url)
-
+    return NextResponse.json(
+      { error: "Upload failed" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({images: uploaded})
-
 }

@@ -13,58 +13,104 @@ export default function DetailLeadForm({
     phone: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
-    await fetch("/api/vehicle-leads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        carTitle,
-      }),
-    });
+    if (!form.name || !form.phone) {
+      alert("Please enter name and phone");
+      return;
+    }
 
-    alert("✅ Request Sent!");
-    setForm({ name: "", email: "", phone: "" });
+    setLoading(true);
+
+    try {
+      await fetch("/api/vehicle-leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          carTitle,
+        }),
+      });
+
+      setSent(true);
+      setForm({ name: "", email: "", phone: "" });
+
+    } catch (err) {
+      alert("Something went wrong");
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div className="mt-8 border-t pt-6">
-      <h3 className="font-bold mb-4">Request Information</h3>
+    <div className="mt-8 border rounded-2xl p-6 shadow-sm bg-white">
 
+      {/* HEADER */}
+      <h3 className="text-xl font-bold mb-2">
+        Get This Car Today
+      </h3>
+
+      <p className="text-sm text-gray-500 mb-4">
+        Fill out the form and our team will contact you within minutes.
+      </p>
+
+      {/* URGENCY */}
+      <div className="text-xs text-red-600 font-semibold mb-4">
+        🔥 High demand – limited availability
+      </div>
+
+      {/* SUCCESS */}
+      {sent && (
+        <div className="bg-green-100 text-green-700 p-3 rounded mb-4 text-sm">
+          ✅ Request sent! We’ll contact you shortly.
+        </div>
+      )}
+
+      {/* INPUTS */}
       <input
         name="name"
         value={form.name}
         onChange={handleChange}
         placeholder="Full Name"
-        className="w-full border p-3 mb-3 rounded-lg"
+        className="w-full border p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
       />
 
       <input
         name="phone"
         value={form.phone}
         onChange={handleChange}
-        placeholder="Phone"
-        className="w-full border p-3 mb-3 rounded-lg"
+        placeholder="Phone Number"
+        className="w-full border p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
       />
 
       <input
         name="email"
         value={form.email}
         onChange={handleChange}
-        placeholder="Email"
-        className="w-full border p-3 mb-3 rounded-lg"
+        placeholder="Email (optional)"
+        className="w-full border p-3 mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
       />
 
+      {/* CTA */}
       <button
         onClick={handleSubmit}
-        className="w-full bg-black text-white py-3 rounded-lg"
+        disabled={loading}
+        className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"
       >
-        Send Request
+        {loading ? "Sending..." : "Get Info & Price"}
       </button>
+
+      {/* TRUST */}
+      <p className="text-xs text-gray-400 mt-3 text-center">
+        No spam. No obligation.
+      </p>
+
     </div>
   );
 }

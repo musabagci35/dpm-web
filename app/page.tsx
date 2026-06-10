@@ -1,167 +1,210 @@
 import Link from "next/link";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
-import LeadForm from "@/components/LeadForm";
+
+import Section from "@/components/ui/section";
+import Button from "@/components/ui/button";
+import Badge from "@/components/ui/badge";
+import { SectionHeading } from "@/components/ui/heading";
 
 export default async function HomePage() {
-
   await connectDB();
 
-  const cars = await Car.find({ isActive: true })
+  const featuredCars = await Car.find({
+    isActive: true,
+    status: { $ne: "sold" },
+    isFeatured: true,
+  })
     .sort({ createdAt: -1 })
     .limit(6)
     .lean();
 
+  const newestCars = await Car.find({
+    isActive: true,
+    status: { $ne: "sold" },
+  })
+    .sort({ createdAt: -1 })
+    .limit(6)
+    .lean();
+
+  const cars = featuredCars.length > 0 ? featuredCars : newestCars;
+
   return (
-    <main className="bg-white">
+    <main className="bg-white text-gray-900">
 
       {/* HERO */}
-      <section className="bg-gray-900 text-white py-24">
-        <div className="max-w-6xl mx-auto px-6 text-center">
+      <Section className="bg-black text-white text-center">
+        <Badge variant="info">Dealer Inspected</Badge>
 
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            Find Your Next Car
-          </h1>
+        <h1 className="mt-4 text-5xl font-extrabold tracking-tight">
+          Find Your Next Car
+        </h1>
 
-          <p className="text-gray-300 mb-8">
-            Quality used vehicles with transparent pricing and easy financing.
-          </p>
+        <p className="mt-4 text-white/70 max-w-xl mx-auto">
+          Shop quality used vehicles with transparent pricing.
+        </p>
 
-          <Link
-            href="/inventory"
-            className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-semibold"
-          >
+        <div className="mt-8 flex justify-center gap-3">
+          <Button href="/inventory" size="lg">
             Browse Inventory
-          </Link>
+          </Button>
 
+          <Button href="/financing" variant="outline" size="lg">
+            Get Approved
+          </Button>
         </div>
-      </section>
+      </Section>
 
-      {/* FEATURED VEHICLES */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6">
+      {/* FEATURED / NEWEST INVENTORY */}
+      <Section>
+        <SectionHeading
+          title={
+            featuredCars.length > 0
+              ? "Featured Vehicles"
+              : "Newest Arrivals"
+          }
+          description={
+            featuredCars.length > 0
+              ? "Hand-picked inventory ready for you"
+              : "Fresh vehicles recently added to our inventory"
+          }
+        />
 
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-bold">
-              Featured Vehicles
-            </h2>
-
-            <Link
-              href="/inventory"
-              className="text-red-600 font-semibold"
-            >
-              View All
-            </Link>
+        {cars.length === 0 ? (
+          <div className="rounded-2xl border p-8 text-center">
+            <h3 className="text-xl font-bold">No vehicles available yet</h3>
+            <p className="text-gray-500 mt-2">
+              Please check back soon for new inventory.
+            </p>
           </div>
-          <section className="mx-auto max-w-6xl px-6 py-14">
-  <div className="grid gap-6 md:grid-cols-2">
-    <div className="rounded-2xl border bg-white p-6">
-      <h2 className="text-2xl font-bold">Need help finding a car?</h2>
-      <p className="mt-2 text-gray-500">
-        Tell us what you want and we’ll reach out fast.
-      </p>
-    </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {cars.map((car: any) => {
+              const title =
+                car.title || `${car.year} ${car.make} ${car.model}`;
 
-    <LeadForm source="website" title="Contact Drive Prime Motors" />
-  </div>
-</section>
+              const price = Number(car.price || 0);
+              const monthly = price
+                ? Math.round((price * 1.15) / 60)
+                : 0;
+                const coverImage = car.images?.find((img: any) => img.isCover)?.url;
+const firstImage = car.images?.[0]?.url;
 
-          <div className="grid md:grid-cols-3 gap-6">
+const image =
+  coverImage && coverImage.startsWith("http")
+    ? coverImage
+    : firstImage && firstImage.startsWith("http")
+    ? firstImage
+    : "/car.png";
 
-            {cars.map((car: any) => (
+              return (
+                <Link
+                  key={car._id.toString()}
+                  href={`/inventory/${car.slug || car._id}`}
+                  className="group rounded-2xl border bg-white overflow-hidden hover:shadow-xl transition"
+                >
+                  <img
+                    src={image}
+                    alt={title}
+                    className="w-full h-48 object-cover"
+                  />
 
-              <Link
-                key={car._id}
-                href={`/inventory/${car._id}`}
-                className="bg-white border rounded-xl overflow-hidden hover:shadow-lg transition"
-              >
+                  <div className="p-4">
+                    <div className="flex gap-2 mb-2">
+                      {car.isFeatured && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
+                          Featured
+                        </span>
+                      )}
 
-                <img
-                  src={car.images?.[0]?.url || "/car.png"}
-                  className="w-full h-48 object-cover"
-                />
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+                        Available
+                      </span>
+                    </div>
 
-                <div className="p-4">
+                    <h3 className="font-bold text-lg group-hover:text-red-600">
+                      {title}
+                    </h3>
 
-                  <h3 className="font-semibold text-lg">
-                    {car.year} {car.make} {car.model}
-                  </h3>
+                    <p className="text-green-600 font-bold mt-2">
+                      ${monthly.toLocaleString()}/mo
+                    </p>
+                    <p className="text-xs text-gray-400">
+  Estimated payment. ${price.toLocaleString()} total price
+</p>
 
-                  <p className="text-gray-500 text-sm mt-1">
-                    {car.mileage?.toLocaleString()} miles
-                  </p>
-
-                  <p className="text-xl font-bold mt-3">
-                    ${car.price?.toLocaleString()}
-                  </p>
-
-                </div>
-
-              </Link>
-
-            ))}
-
+                    <p className="text-xs text-gray-400">
+                      ${price.toLocaleString()} total
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
+        )}
 
+        <div className="text-center mt-10">
+          <Button href="/inventory">View All Inventory</Button>
         </div>
-      </section>
+      </Section>
 
-      {/* FINANCING */}
-      <section className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-6 text-center">
+      {/* WHY US */}
+      <Section className="bg-gray-100">
+        <SectionHeading
+          title="Why Choose Us"
+          description="We make buying a car simple and transparent"
+          align="center"
+        />
 
-          <h2 className="text-3xl font-bold mb-4">
-            Easy Auto Financing
-          </h2>
-
-          <p className="text-gray-600 mb-8">
-            We work with multiple lenders to help you get approved fast.
-          </p>
-
-          <Link
-            href="/financing"
-            className="bg-black text-white px-6 py-3 rounded-lg font-semibold"
-          >
-            Apply for Financing
-          </Link>
-
-        </div>
-      </section>
-
-      {/* TRUST */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8 text-center">
-
+        <div className="grid md:grid-cols-3 gap-6 text-center">
           <div>
-            <h3 className="text-xl font-bold mb-2">
-              Transparent Pricing
-            </h3>
-            <p className="text-gray-600">
-              No hidden fees and clear vehicle history.
+            <h3 className="font-bold">✔ Dealer Inspected</h3>
+            <p className="text-gray-600 mt-2">
+              Every vehicle is checked before sale
             </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-bold mb-2">
-              Quality Vehicles
-            </h3>
-            <p className="text-gray-600">
-              Carefully inspected used cars.
+            <h3 className="font-bold">✔ Easy Financing</h3>
+            <p className="text-gray-600 mt-2">
+              All credit types welcome
             </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-bold mb-2">
-              Trusted Dealer
-            </h3>
-            <p className="text-gray-600">
-              Serving California drivers with confidence.
+            <h3 className="font-bold">✔ No Hidden Fees</h3>
+            <p className="text-gray-600 mt-2">
+              Transparent pricing guaranteed
             </p>
           </div>
-
         </div>
-      </section>
+      </Section>
 
+      {/* SELL CTA */}
+      <Section className="bg-black text-white text-center">
+        <h2 className="text-4xl font-bold">Sell Your Car Fast</h2>
+
+        <p className="mt-4 text-white/70">
+          Get instant offers and sell your vehicle in minutes.
+        </p>
+
+        <div className="mt-6">
+          <Button href="/sell-your-car" variant="primary" size="lg">
+            Get Offer
+          </Button>
+        </div>
+      </Section>
+
+      {/* FINAL CTA */}
+      <Section className="text-center">
+        <h2 className="text-4xl font-bold">Ready to Drive?</h2>
+
+        <div className="mt-6">
+          <Button href="/inventory" size="lg">
+            Browse Cars
+          </Button>
+        </div>
+      </Section>
     </main>
   );
 }

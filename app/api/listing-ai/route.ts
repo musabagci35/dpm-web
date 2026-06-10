@@ -1,62 +1,26 @@
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { car } = await req.json();
+    const body = await req.json();
 
-    const base = `${car.year} ${car.make} ${car.model}
-Price: $${car.price}
-Mileage: ${car.mileage}`;
+    const year = body.year || "";
+    const make = body.make || "";
+    const model = body.model || "";
+    const mileage = body.mileage || "";
+    const price = body.price || "";
 
-    const response = await client.responses.create({
-      model: "gpt-4.1-mini",
-      input: `
-Create 3 different car listings:
+    const description = `${year} ${make} ${model} available now at Drive Prime Motors. This vehicle has ${mileage} miles and is listed for $${price}. Contact us today to schedule a test drive or get financing options.`;
 
-1. Facebook Marketplace → short, catchy, emojis
-2. Craigslist → longer, SEO, detailed
-3. OfferUp → casual, simple
-
-Car:
-${base}
-
-Return JSON like:
-{
-  "facebook": "...",
-  "craigslist": "...",
-  "offerup": "..."
-}
-`,
+    return NextResponse.json({
+      success: true,
+      title: `${year} ${make} ${model}`,
+      description,
     });
-
-    const raw =
-      response.output_text ||
-      response.output?.[0]?.content?.[0]?.text;
-
-    let parsed;
-
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      // fallback
-      parsed = {
-        facebook: `🔥 ${base}\nCall now!`,
-        craigslist: `${base}\nClean title. Great condition.`,
-        offerup: `${base}\nRuns good!`,
-      };
-    }
-
-    return Response.json(parsed);
-
-  } catch (e) {
-    return Response.json({
-      facebook: "Great car for sale!",
-      craigslist: "Reliable vehicle ready to drive.",
-      offerup: "Runs good, message me.",
-    });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: "Failed to generate listing" },
+      { status: 500 }
+    );
   }
 }

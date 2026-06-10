@@ -1,92 +1,181 @@
+import Link from "next/link";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import Lead from "@/models/Lead";
+import LogoutButton from "@/components/admin/LogoutButton";
 
-export default async function AdminDashboard() {
-
+export default async function Dashboard() {
   await connectDB();
 
-  const totalCars = await Car.countDocuments({});
-  const liveCars = await Car.countDocuments({ isActive: true });
+  const [
+    totalCars,
+    activeCars,
+    soldCars,
+    featuredCars,
+    totalLeads,
+    hotLeads,
+    newLeads,
+    appointments,
+    wonLeads,
+    cars,
+  ] = await Promise.all([
+    Car.countDocuments(),
+    Car.countDocuments({ isActive: true }),
+    Car.countDocuments({ status: "sold" }),
+    Car.countDocuments({ isFeatured: true }),
+    Lead.countDocuments(),
+    Lead.countDocuments({ priority: "hot" }),
+    Lead.countDocuments({ status: "new" }),
+    Lead.countDocuments({ status: "appointment" }),
+    Lead.countDocuments({ status: "won" }),
+    Car.find({}).lean(),
+  ]);
 
-  const latestCars = await Car.find({})
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .lean();
+  const inventoryValue = cars.reduce(
+    (sum: number, car: any) => sum + Number(car.price || 0),
+    0
+  );
 
-    const avgPrice =
-  latestCars.reduce((t:any,c:any)=>t+(c.price||0),0) / latestCars.length;
+  const estimatedProfit = cars.reduce((sum: number, car: any) => {
+    const price = Number.isFinite(Number(car.price)) ? Number(car.price) : 0;
+    const cost = Number.isFinite(Number(car.cost)) ? Number(car.cost) : 0;
+    const recon = Number.isFinite(Number(car.recon)) ? Number(car.recon) : 0;
+    const marketing = Number.isFinite(Number(car.marketing)) ? Number(car.marketing) : 0;
+    const docFee = Number.isFinite(Number(car.docFee)) ? Number(car.docFee) : 0;
+  
+    const profit = price - cost - recon - marketing - docFee;
+  
+    return sum + Math.max(profit, 0);
+  }, 0);
 
-const expectedProfit =
-  latestCars.reduce((t:any,c:any)=>t+(c.price||0),0) * 0.15;
+  const conversionRate =
+    totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 100) : 0;
 
   return (
     <main className="min-h-screen bg-gray-50 p-10">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-gray-500 mt-1">
+            Drive Prime Motors business overview
+          </p>
+        </div>
 
-      <h1 className="text-3xl font-bold mb-6">
-        Dealer Dashboard
-      </h1>
-      
+        <LogoutButton />
+      </div>
 
       {/* STATS */}
-      <div className="grid md:grid-cols-3 gap-6 mb-10">
+      <div className="grid md:grid-cols-4 gap-6 mb-10">
+        <StatCard title="Total Cars" value={totalCars} />
+        <StatCard title="Active Cars" value={activeCars} />
+        <StatCard title="Sold Cars" value={soldCars} />
+        <StatCard title="Featured Cars" value={featuredCars} />
 
-        <div className="bg-white border rounded-xl p-6">
-          <p className="text-gray-500 text-sm">Total Cars</p>
-          <p className="text-3xl font-bold">{totalCars}</p>
-        </div>
+        <StatCard title="Total Leads" value={totalLeads} />
+        <StatCard title="Hot Leads" value={hotLeads} />
+        <StatCard title="New Leads" value={newLeads} />
+        <StatCard title="Appointments" value={appointments} />
 
-        <div className="bg-white border rounded-xl p-6">
-          <p className="text-gray-500 text-sm">Live Cars</p>
-          <p className="text-3xl font-bold">{liveCars}</p>
-        </div>
+        <StatCard
+          title="Inventory Value"
+          value={`$${inventoryValue.toLocaleString()}`}
+        />
 
-        <div className="bg-white border rounded-xl p-6">
-          <p className="text-gray-500 text-sm">Inventory Value</p>
-          <p className="text-3xl font-bold">
-            ${latestCars.reduce((t:any,c:any)=>t+(c.price||0),0).toLocaleString()}
-          </p>
-        </div>
+        <StatCard
+          title="Estimated Profit"
+          value={`$${estimatedProfit.toLocaleString()}`}
+        />
 
+        <StatCard title="Closed Deals" value={wonLeads} />
+
+        <StatCard title="Conversion Rate" value={`${conversionRate}%`} />
       </div>
 
-      {/* LATEST VEHICLES */}
-      <div className="bg-white border rounded-xl p-6">
-
-        <h2 className="text-xl font-bold mb-4">
-          Latest Vehicles
-        </h2>
-
-        {latestCars.length === 0 && (
-          <p className="text-gray-500">
-            No cars yet
+      {/* QUICK ACTIONS */}
+      <div className="grid md:grid-cols-4 gap-6">
+        <Link
+          href="/admin/add-car"
+          className="bg-black text-white p-6 rounded-xl hover:opacity-90"
+        >
+          <h2 className="font-bold text-lg">➕ Add Vehicle</h2>
+          <p className="text-sm text-white/70 mt-2">
+            Create a new inventory listing
           </p>
-        )}
+        </Link>
+        <Link
+  href="/admin/parts"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🧰 Manage Parts</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Edit parts inventory, prices, and stock
+  </p>
+</Link>
 
-        {latestCars.map((car:any)=>(
-          <div
-            key={car._id}
-            className="flex justify-between border-b py-3"
-          >
-    
-            <div>
-              <p className="font-semibold">
-                {car.year} {car.make} {car.model}
-              </p>
+        <Link
+          href="/admin/inventory"
+          className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+        >
+          <h2 className="font-bold text-lg">🚗 Manage Inventory</h2>
+          <p className="text-sm text-gray-500 mt-2">
+            Edit vehicles, prices, photos, and status
+          </p>
+        </Link>
 
-              <p className="text-sm text-gray-500">
-                VIN: {car.vin}
-              </p>
-            </div>
+        <Link
+          href="/admin/leads"
+          className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+        >
+          <h2 className="font-bold text-lg">📞 Lead CRM</h2>
+          <p className="text-sm text-gray-500 mt-2">
+            Follow up with customers and appointments
+          </p>
+        </Link>
 
-            <p className="font-bold">
-              ${car.price?.toLocaleString() || "0"}
-            </p>
+        <Link
+          href="/inventory"
+          className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+        >
+          <h2 className="font-bold text-lg">🌐 Public Inventory</h2>
+          <p className="text-sm text-gray-500 mt-2">
+            View the customer-facing inventory page
+          </p>
+        </Link>
+        <Link
+  href="/admin/add-part"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🔧 Add Part</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Add engines, transmissions, bumpers, wheels and more
+  </p>
+</Link>
 
-          </div>
-        ))}
-
+<Link
+  href="/parts"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🛒 Public Parts</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    View the customer-facing parts page
+  </p>
+</Link>
       </div>
-
     </main>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+}: {
+  title: string;
+  value: string | number;
+}) {
+  return (
+    <div className="bg-white border rounded-xl p-6 shadow-sm">
+      <p className="text-gray-500 text-sm">{title}</p>
+      <p className="text-3xl font-bold mt-2">{value}</p>
+    </div>
   );
 }

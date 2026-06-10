@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import User from "../models/User.js";
 const userSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true, index: true },

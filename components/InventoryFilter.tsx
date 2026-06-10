@@ -1,4 +1,5 @@
 "use client";
+
 import PriceRangeSlider from "./PriceRangeSlider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -30,67 +31,84 @@ export default function InventoryFilter() {
   };
 
   return (
-    <div className="bg-white border rounded-xl p-6 mb-10 shadow-sm">
+    <div className="mb-10">
 
-      <div className="grid gap-4 md:grid-cols-6">
+      {/* TOP BAR */}
+      <div className="flex flex-wrap justify-between items-center mb-4 gap-3">
 
-        {/* MAKE */}
-        <input
-          placeholder="Make"
-          value={make}
-          onChange={(e) => setMake(e.target.value)}
-          className="border rounded px-3 py-2"
-        />
+        <h2 className="text-xl font-bold">
+          Find Your Car
+        </h2>
 
-        {/* MODEL */}
-        <input
-          placeholder="Model"
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          className="border rounded px-3 py-2"
-        />
-
-        {/* PRICE */}
-        <input
-          placeholder="Max Price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="border rounded px-3 py-2"
-        />
-
-        {/* YEAR */}
-        <input
-          placeholder="Min Year"
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-          className="border rounded px-3 py-2"
-        />
-
-        {/* MILEAGE */}
-        <input
-          placeholder="Max Mileage"
-          value={mileage}
-          onChange={(e) => setMileage(e.target.value)}
-          className="border rounded px-3 py-2"
-        />
-
-        {/* BUTTON */}
-        <button
-          onClick={applyFilters}
-          className="bg-black text-white rounded px-4 py-2 hover:bg-gray-900"
-        >
-          Apply
-        </button>
-
-      </div>
-
-      <div className="mt-4">
         <button
           onClick={clearFilters}
           className="text-sm text-gray-500 hover:underline"
         >
           Clear Filters
         </button>
+
+      </div>
+
+      {/* FILTER BOX */}
+      <div className="bg-white border rounded-2xl p-5 shadow-sm">
+
+        <div className="grid gap-4 md:grid-cols-6">
+
+          {/* MAKE */}
+          <input
+            placeholder="Make (Toyota, BMW...)"
+            value={make}
+            onChange={(e) => setMake(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          />
+
+          {/* MODEL */}
+          <input
+            placeholder="Model (Camry, X5...)"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          />
+
+          {/* PRICE */}
+          <input
+            placeholder="Max Price ($)"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          />
+
+          {/* YEAR */}
+          <input
+            placeholder="Min Year"
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          />
+
+          {/* MILEAGE */}
+          <input
+            placeholder="Max Mileage"
+            value={mileage}
+            onChange={(e) => setMileage(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          />
+
+          {/* APPLY BUTTON */}
+          <button
+            onClick={applyFilters}
+            className="bg-black text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-gray-800 transition"
+          >
+            Search
+          </button>
+
+        </div>
+
+        {/* SLIDER (BONUS UX) */}
+        <div className="mt-6">
+          <PriceRangeSlider />
+        </div>
+
       </div>
 
     </div>

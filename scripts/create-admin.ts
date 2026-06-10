@@ -1,33 +1,24 @@
 import bcrypt from "bcryptjs";
-import { connectDB } from "@/lib/db";
-import User from "@/models/User";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import User from "../models/User";
 
-async function main() {
-  await connectDB();
+dotenv.config({ path: ".env.local" });
 
-  const email = process.env.ADMIN_EMAIL!;
-  const password = process.env.ADMIN_PASSWORD!;
+async function run() {
+  await mongoose.connect(process.env.MONGODB_URI!);
 
-  const existing = await User.findOne({ email });
-  if (existing) {
-    console.log("Admin already exists");
-    process.exit(0);
-  }
-
-  const passwordHash = await bcrypt.hash(password, 12);
+  const password = "123456";
+  const passwordHash = await bcrypt.hash(password, 10);
 
   await User.create({
-    email,
+    email: "admin@driveprimemotors.com",
     passwordHash,
     role: "admin",
-    name: "Admin",
   });
 
-  console.log("Admin created");
+  console.log("✅ Admin created");
   process.exit(0);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+run();
