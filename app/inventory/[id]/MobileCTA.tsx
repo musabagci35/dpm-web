@@ -39,7 +39,7 @@ export default function MobileCTA({
           </a>
 
           <a
-            href="tel:+19162769090"
+          href="tel:+19162618880"
             className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-gray-100"
           >
             Call
