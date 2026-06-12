@@ -16,7 +16,6 @@ export default async function PartDetailPage({
 
   const part: any = await Part.findOne({
     slug,
-    isActive: true,
   }).lean();
 
   if (!part) {
