@@ -41,12 +41,7 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link
-            href="/admin"
-            className="rounded-xl border px-4 py-2 text-sm font-semibold transition hover:bg-gray-100"
-          >
-            Admin
-          </Link>
+        
 
           <a
             href="tel:+19162618880"
@@ -75,7 +70,7 @@ export default function Navbar() {
             <Link href="/sell-your-car" onClick={() => setOpen(false)} className={mobileLink}>Sell Your Car</Link>
             <Link href="/financing" onClick={() => setOpen(false)} className={mobileLink}>Financing</Link>
             <Link href="/contact" onClick={() => setOpen(false)} className={mobileLink}>Contact</Link>
-            <Link href="/admin" onClick={() => setOpen(false)} className={mobileLink}>Admin</Link>
+           
 
             <a
               href="tel:+19162618880"
