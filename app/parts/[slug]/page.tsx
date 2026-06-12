@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 import Part from "@/models/Part";
 
 type PageProps = {
