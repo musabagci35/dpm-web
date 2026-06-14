@@ -35,6 +35,7 @@ export async function PATCH(req: Request, { params }: RouteContext) {
       mileage: Number(body.mileage || 0),
       description: body.description || "",
       isActive: !!body.isActive,
+      status: body.status || "available",
       images: body.images || [],
       cost: Number(body.cost || 0),
       recon: Number(body.recon || 0),

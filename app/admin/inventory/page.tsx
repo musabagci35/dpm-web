@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import CarStatusButtons from "@/components/admin/CarStatusButtons";
 
 function statusClass(status: string) {
   if (status === "available") return "bg-green-100 text-green-700";
@@ -107,6 +108,7 @@ export default async function AdminInventoryPage() {
                 >
                   Edit
                 </Link>
+                <CarStatusButtons carId={car._id.toString()} />
               </div>
             </div>
           );
