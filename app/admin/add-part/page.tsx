@@ -111,11 +111,12 @@ export default function AddPartPage() {
         </select>
 
         <input
-          name="price"
-          type="number"
-          placeholder="Price"
-          className="w-full border p-2"
-        />
+  name="price"
+  type="number"
+  step="0.01"
+  placeholder="Price"
+  className="w-full border p-2"
+/>
 
         <input
           name="quantity"
