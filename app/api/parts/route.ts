@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 import Part from "@/models/Part";
 
 export async function GET() {
@@ -34,7 +34,9 @@ function makeSku(category: string) {
     .slice(0, 3)
     .toUpperCase();
 
-  const randomCode = Math.floor(100000 + Math.random() * 900000);
+  const randomCode = Math.floor(
+    100000 + Math.random() * 900000
+  );
 
   return `${categoryCode}-${randomCode}`;
 }
@@ -63,7 +65,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const sku = makeSku(body.category || "other");
+    const sku = body.sku?.trim()
+      ? body.sku.trim()
+      : makeSku(body.category || "other");
 
     const created = await Part.create({
       title: body.title,
