@@ -158,6 +158,23 @@ export default function EditCarPage() {
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="flex justify-between items-center">
         <div>
+        <div className="mb-4 flex gap-2">
+  <button
+    type="button"
+    onClick={() => router.push("/admin/dashboard")}
+    className="rounded-xl border px-4 py-2"
+  >
+    ← Dashboard
+  </button>
+
+  <button
+    type="button"
+    onClick={() => router.push("/admin/parts")}
+    className="rounded-xl border px-4 py-2"
+  >
+    ← Parts
+  </button>
+</div>
           <h1 className="text-3xl font-bold">Edit Vehicle</h1>
           <p className="text-sm text-gray-500">ID: {id}</p>
         </div>
