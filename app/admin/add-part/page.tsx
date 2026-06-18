@@ -15,24 +15,27 @@ export default function AddPartPage() {
 
     const form = e.currentTarget;
     const formData = new FormData(form);
+    const title = String(formData.get("title") || "").trim();
 
-    const payload = {
-      title: String(formData.get("title") || ""),
-      partNumber: String(formData.get("partNumber") || ""),
-      oemNumber: String(formData.get("oemNumber") || ""),
-      condition: String(formData.get("condition") || "used"),
-      compatibility: String(
-        formData.get("compatibility") || ""
-      ),
-      ebayUrl: String(formData.get("ebayUrl") || ""),
-      price: Number(formData.get("price") || 0),
-      quantity: Number(formData.get("quantity") || 1),
-      description: String(
-        formData.get("description") || ""
-      ),
-      images,
-      isActive: true,
-    };
+const slug = title
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/(^-|-$)/g, "");
+
+  const payload = {
+    title,
+    slug,
+    partNumber: String(formData.get("partNumber") || ""),
+    oemNumber: String(formData.get("oemNumber") || ""),
+    condition: String(formData.get("condition") || "used"),
+    compatibility: String(formData.get("compatibility") || ""),
+    ebayUrl: String(formData.get("ebayUrl") || ""),
+    price: Number(formData.get("price") || 0),
+    quantity: Number(formData.get("quantity") || 1),
+    description: String(formData.get("description") || ""),
+    images,
+    isActive: true,
+  };
 
     try {
       const res = await fetch("/api/parts", {
@@ -73,7 +76,7 @@ export default function AddPartPage() {
       >
         <input
           name="title"
-          placeholder="Part Title"
+          placeholder="Part Title" required
           className="w-full border p-2"
         />
 
