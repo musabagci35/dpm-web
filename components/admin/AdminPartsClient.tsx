@@ -8,6 +8,7 @@ export default function AdminPartsClient({ parts }: { parts: any[] }) {
   const [category, setCategory] = useState("all");
   const [condition, setCondition] = useState("all");
   const [stock, setStock] = useState("all");
+  const [publishingId, setPublishingId] = useState<string | null>(null);
 
   const filteredParts = parts.filter((part) => {
     const searchText = search.toLowerCase();
@@ -33,6 +34,10 @@ export default function AdminPartsClient({ parts }: { parts: any[] }) {
   });
 
   async function publishToEbay(partId: string) {
+    if (!confirm("Publish this part to eBay?")) return;
+  
+    setPublishingId(partId);
+  
     try {
       const res = await fetch("/api/ebay/publish-part", {
         method: "POST",
@@ -41,11 +46,11 @@ export default function AdminPartsClient({ parts }: { parts: any[] }) {
         },
         body: JSON.stringify({ partId }),
       });
-
+  
       const data = await res.json();
-
+  
       if (data.success) {
-        alert("Part sent to eBay ✅");
+        alert(`Part listed on eBay ✅ Item ID: ${data.ebayItemId || "N/A"}`);
         window.location.reload();
       } else {
         alert(data.error || "eBay publish failed");
@@ -53,6 +58,8 @@ export default function AdminPartsClient({ parts }: { parts: any[] }) {
     } catch (error) {
       console.error(error);
       alert("eBay error");
+    } finally {
+      setPublishingId(null);
     }
   }
 
@@ -214,18 +221,29 @@ export default function AdminPartsClient({ parts }: { parts: any[] }) {
                       >
                         Edit
                       </Link>
-
                       {part.ebayStatus === "listed" ? (
-  <span className="text-xs font-semibold text-green-600">
-    Published
-  </span>
+  <div className="text-xs font-semibold text-green-600">
+    <div>Published</div>
+    {part.ebayItemId && (
+      <a
+        href={`https://www.ebay.com/itm/${part.ebayItemId}`}
+        target="_blank"
+        className="text-blue-600 hover:underline"
+      >
+        View eBay
+      </a>
+    )}
+  </div>
 ) : (
   <button
     type="button"
+    disabled={publishingId === part._id.toString()}
     onClick={() => publishToEbay(part._id.toString())}
-    className="text-purple-600 hover:underline"
+    className="text-purple-600 hover:underline disabled:opacity-50"
   >
-    Publish to eBay
+    {publishingId === part._id.toString()
+      ? "Publishing..."
+      : "Publish to eBay"}
   </button>
 )}
                     </div>
