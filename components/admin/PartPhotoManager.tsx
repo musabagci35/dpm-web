@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { proThumb, proImage } from "@/lib/cloudinaryImage";
 
 type Img = {
   url: string;
@@ -16,6 +17,7 @@ type Props = {
 export default function PartPhotoManager({ value, onChange }: Props) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
 
   async function handleUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -34,11 +36,9 @@ export default function PartPhotoManager({ value, onChange }: Props) {
           reader.readAsDataURL(file);
         });
 
-        const res = await fetch("/api/upload", {
+        const res = await fetch("/api/upload-part", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ file: base64 }),
         });
 
@@ -76,11 +76,31 @@ export default function PartPhotoManager({ value, onChange }: Props) {
   }
 
   function setCover(index: number) {
-    const updated = value.map((img, i) => ({
-      ...img,
-      isCover: i === index,
-    }));
+    onChange(value.map((img, i) => ({ ...img, isCover: i === index })));
+  }
 
+  function rotate(index: number) {
+    const updated = [...value];
+    const img = updated[index];
+
+    if (!img.url.includes("res.cloudinary.com")) {
+      alert("Only Cloudinary images can be rotated.");
+      return;
+    }
+
+    let rotatedUrl = img.url;
+
+    if (rotatedUrl.includes("/upload/a_270/")) {
+      rotatedUrl = rotatedUrl.replace("/upload/a_270/", "/upload/");
+    } else if (rotatedUrl.includes("/upload/a_180/")) {
+      rotatedUrl = rotatedUrl.replace("/upload/a_180/", "/upload/a_270/");
+    } else if (rotatedUrl.includes("/upload/a_90/")) {
+      rotatedUrl = rotatedUrl.replace("/upload/a_90/", "/upload/a_180/");
+    } else {
+      rotatedUrl = rotatedUrl.replace("/upload/", "/upload/a_90/");
+    }
+
+    updated[index] = { ...img, url: rotatedUrl };
     onChange(updated);
   }
 
@@ -124,12 +144,13 @@ export default function PartPhotoManager({ value, onChange }: Props) {
             onDragStart={() => onDragStart(index)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => onDrop(index)}
-            className="relative overflow-hidden rounded-xl border bg-white"
+            className="group relative overflow-hidden rounded-xl border bg-white"
           >
             <img
-              src={img.url}
+           src={proThumb(img.url)}
               alt={`Part image ${index + 1}`}
-              className="h-40 w-full object-cover"
+              onClick={() => setPreview(img.url)}
+              className="h-40 w-full cursor-pointer object-cover"
             />
 
             {img.isCover && (
@@ -138,13 +159,21 @@ export default function PartPhotoManager({ value, onChange }: Props) {
               </div>
             )}
 
-            <div className="absolute bottom-2 left-2 right-2 flex gap-2">
+            <div className="absolute bottom-2 left-2 right-2 flex gap-2 opacity-0 transition group-hover:opacity-100">
               <button
                 type="button"
                 onClick={() => setCover(index)}
                 className="flex-1 rounded bg-white px-2 py-1 text-xs"
               >
                 Cover
+              </button>
+
+              <button
+                type="button"
+                onClick={() => rotate(index)}
+                className="flex-1 rounded bg-gray-900 px-2 py-1 text-xs text-white"
+              >
+                Rotate
               </button>
 
               <button
@@ -158,6 +187,27 @@ export default function PartPhotoManager({ value, onChange }: Props) {
           </div>
         ))}
       </div>
+
+      {preview && (
+        <div
+          onClick={() => setPreview(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
+        >
+          <button
+            type="button"
+            onClick={() => setPreview(null)}
+            className="absolute right-6 top-6 rounded bg-white px-4 py-2 text-black"
+          >
+            Close
+          </button>
+
+          <img
+           src={proImage(preview)}
+            alt="Preview"
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
+          />
+        </div>
+      )}
     </div>
   );
 }

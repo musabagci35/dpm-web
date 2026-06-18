@@ -3,173 +3,224 @@
 import React, { useState } from "react";
 
 export default function SellYourCarPage() {
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    vin: "",
+    year: "",
+    make: "",
+    model: "",
+    mileage: "",
+    price: "",
+    message: "",
+  });
 
-  const [form,setForm] = useState({
-    name:"",
-    phone:"",
-    email:"",
-    year:"",
-    make:"",
-    model:"",
-    mileage:"",
-    price:"",
-    message:""
-  })
+  const [images, setImages] = useState<FileList | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const [images,setImages] = useState<FileList | null>(null)
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const handleChange = (e:any)=>{
-    setForm({...form,[e.target.name]:e.target.value})
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const handleSubmit = async(e:any)=>{
+    try {
+      let uploadedImages: string[] = [];
 
-    e.preventDefault()
+      if (images && images.length > 0) {
+        const fd = new FormData();
 
-    let uploadedImages:string[] = []
+        for (let i = 0; i < images.length; i++) {
+          fd.append("files", images[i]);
+        }
 
-    if(images){
+        const upload = await fetch("/api/upload", {
+          method: "POST",
+          body: fd,
+        });
 
-      const fd = new FormData()
+        if (!upload.ok) {
+          throw new Error("Image upload failed");
+        }
 
-      for(let i=0;i<images.length;i++){
-        fd.append("files",images[i])
+        const img = await upload.json();
+        uploadedImages = img.images || [];
       }
 
-      const upload = await fetch("/api/upload",{
-        method:"POST",
-        body:fd
-      })
+      const res = await fetch("/api/sell-your-car", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...form,
+          images: uploadedImages,
+          source: "sell-your-car",
+          status: "new-lead",
+        }),
+      });
 
-      const img = await upload.json()
+      if (!res.ok) {
+        throw new Error("Submit failed");
+      }
 
-      uploadedImages = img.images
+      alert("Thank you! Your vehicle was submitted successfully.");
+
+      setForm({
+        name: "",
+        phone: "",
+        email: "",
+        vin: "",
+        year: "",
+        make: "",
+        model: "",
+        mileage: "",
+        price: "",
+        message: "",
+      });
+
+      setImages(null);
+    } catch (error) {
+      alert("Error submitting vehicle. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    const res = await fetch("/api/marketplace",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        ...form,
-        images:uploadedImages,
-        source:"marketplace"
-      })
-    })
-
-    if(res.ok){
-      alert("Vehicle submitted successfully")
-    }else{
-      alert("Error submitting vehicle")
-    }
-
-  }
+  };
 
   return (
-
     <div className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="mb-4 text-3xl font-bold">Sell Your Car</h1>
 
-      <h1 className="text-3xl font-bold mb-4">
-        Sell Your Car
-      </h1>
-
-      <p className="text-gray-600 mb-6">
-        List your vehicle on our marketplace.
+      <p className="mb-6 text-gray-600">
+        Tell us about your vehicle. We will review the information and contact
+        you with the next step.
       </p>
 
       <form onSubmit={handleSubmit} className="grid gap-4">
-
         <input
-        name="name"
-        placeholder="Your Name"
-        onChange={handleChange}
-        required
-        className="border rounded-xl px-4 py-3"
+          name="name"
+          value={form.name}
+          placeholder="Your Name"
+          onChange={handleChange}
+          required
+          className="rounded-xl border px-4 py-3"
         />
 
         <input
-        name="phone"
-        placeholder="Phone"
-        onChange={handleChange}
-        required
-        className="border rounded-xl px-4 py-3"
+          name="phone"
+          value={form.phone}
+          placeholder="Phone Number"
+          onChange={handleChange}
+          required
+          className="rounded-xl border px-4 py-3"
         />
 
         <input
-        name="email"
-        placeholder="Email"
-        onChange={handleChange}
-        className="border rounded-xl px-4 py-3"
+          name="email"
+          value={form.email}
+          type="email"
+          placeholder="Email Address"
+          onChange={handleChange}
+          className="rounded-xl border px-4 py-3"
         />
 
-        <div className="grid grid-cols-3 gap-4">
-
-          <input
-          name="year"
-          placeholder="Year"
+        <input
+          name="vin"
+          value={form.vin}
+          placeholder="VIN Number"
           onChange={handleChange}
-          className="border rounded-xl px-4 py-3"
+          className="rounded-xl border px-4 py-3"
+        />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <input
+            name="year"
+            value={form.year}
+            placeholder="Year"
+            onChange={handleChange}
+            className="rounded-xl border px-4 py-3"
           />
 
           <input
-          name="make"
-          placeholder="Make"
-          onChange={handleChange}
-          className="border rounded-xl px-4 py-3"
+            name="make"
+            value={form.make}
+            placeholder="Make"
+            onChange={handleChange}
+            className="rounded-xl border px-4 py-3"
           />
 
           <input
-          name="model"
-          placeholder="Model"
-          onChange={handleChange}
-          className="border rounded-xl px-4 py-3"
+            name="model"
+            value={form.model}
+            placeholder="Model"
+            onChange={handleChange}
+            className="rounded-xl border px-4 py-3"
           />
-
         </div>
 
         <input
-        name="price"
-        placeholder="Price"
-        onChange={handleChange}
-        className="border rounded-xl px-4 py-3"
+          name="mileage"
+          value={form.mileage}
+          placeholder="Mileage"
+          onChange={handleChange}
+          className="rounded-xl border px-4 py-3"
         />
 
         <input
-        name="mileage"
-        placeholder="Mileage"
-        onChange={handleChange}
-        className="border rounded-xl px-4 py-3"
+          name="price"
+          value={form.price}
+          placeholder="Asking Price"
+          onChange={handleChange}
+          className="rounded-xl border px-4 py-3"
         />
 
         <textarea
-        name="message"
-        placeholder="Tell us about your car"
-        onChange={handleChange}
-        className="border rounded-xl px-4 py-3"
+          name="message"
+          value={form.message}
+          placeholder="Tell us about your car, condition, title status, problems, or upgrades"
+          onChange={handleChange}
+          rows={5}
+          className="rounded-xl border px-4 py-3"
         />
 
-        {/* IMAGE UPLOAD */}
+<div className="grid gap-2">
+  <label className="font-medium">Upload Photos</label>
 
-        <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={(e)=>setImages(e.target.files)}
-        className="border rounded-xl px-4 py-3"
-        />
+  <input
+    type="file"
+    multiple={true}
+    accept="image/jpeg,image/png,image/webp"
+    onChange={(e) => {
+      setImages(e.target.files);
+      console.log("Selected files:", e.target.files?.length);
+    }}
+    className="rounded-xl border px-4 py-3"
+  />
+
+  <p className="text-sm text-gray-500">
+    You can select up to 10 photos. Hold Command on Mac or Ctrl on Windows to select multiple photos.
+  </p>
+
+  {images && images.length > 0 && (
+    <p className="text-sm font-medium text-green-700">
+      {images.length} photo(s) selected
+    </p>
+  )}
+</div>
 
         <button
-        type="submit"
-        className="bg-black text-white rounded-xl py-3"
+          type="submit"
+          disabled={loading}
+          className="rounded-xl bg-black py-3 text-white disabled:opacity-60"
         >
-        Submit Vehicle
+          {loading ? "Submitting..." : "Submit Vehicle"}
         </button>
-
       </form>
-
     </div>
-
-  )
-
+  );
 }

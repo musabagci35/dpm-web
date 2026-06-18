@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { proThumb } from "@/lib/cloudinaryImage";
 
 export default function PartsClient({ parts }: { parts: any[] }) {
   const [search, setSearch] = useState("");
@@ -65,7 +66,7 @@ export default function PartsClient({ parts }: { parts: any[] }) {
               <div className="flex aspect-video items-center justify-center bg-gray-100">
                 {part.images?.[0]?.url ? (
                   <img
-                    src={part.images[0].url}
+                  src={proThumb(part.images[0].url)}
                     alt={part.title}
                     className="h-full w-full object-cover"
                   />

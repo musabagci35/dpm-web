@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connectDB } from "@/lib/mongodb";
+import { proThumb } from "@/lib/cloudinaryImage";
 import Car from "@/models/Car";
 import CarStatusButtons from "@/components/admin/CarStatusButtons";
 
@@ -47,7 +48,7 @@ export default async function AdminInventoryPage() {
               }`}
             >
               <img
-                src={car.images?.[0]?.url || "/car.png"}
+                src={proThumb(car.images?.[0]?.url || "/car.png")}
                 alt={`${car.year} ${car.make} ${car.model}`}
                 className="w-40 h-28 object-cover rounded-xl"
               />

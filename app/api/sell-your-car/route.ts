@@ -1,11 +1,30 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-
+import { connectDB } from "@/lib/mongodb";
+import VehicleLead from "@/models/VehicleLead";
 export async function POST(req: Request) {
   try {
     console.log("🔥 API HIT: sell-your-car");
 
     const form = await req.json();
+    await connectDB();
+
+await VehicleLead.create({
+  name: form.name,
+  phone: form.phone,
+  email: form.email,
+  vin: form.vin,
+  year: form.year,
+  make: form.make,
+  model: form.model,
+  mileage: form.mileage,
+  price: form.price,
+  message: form.message,
+  images: form.images || [],
+  source: "sell-your-car",
+  status: "new",
+});
+    console.log("IMAGES:", form.images);
 
     console.log("📤 TRYING TO SEND MAIL");
     console.log("EMAIL_USER:", process.env.EMAIL_USER);
@@ -27,15 +46,37 @@ export async function POST(req: Request) {
       subject: `🚗 New Car Submission – ${form.year} ${form.make} ${form.model}`,
 
       html: `
-        <h2>Drive Prime Motors</h2>
-        <p><strong>Name:</strong> ${form.name}</p>
-        <p><strong>Phone:</strong> ${form.phone}</p>
-        <p><strong>Email:</strong> ${form.email}</p>
-        <hr/>
-        <p><strong>Vehicle:</strong> ${form.year} ${form.make} ${form.model}</p>
-        <p><strong>Mileage:</strong> ${form.mileage}</p>
-        <p>${form.message || ""}</p>
-      `,
+      <h2>🚗 New Sell Your Car Lead</h2>
+    
+      <p><strong>Name:</strong> ${form.name}</p>
+      <p><strong>Phone:</strong> ${form.phone}</p>
+      <p><strong>Email:</strong> ${form.email || "N/A"}</p>
+    
+      <hr/>
+    
+      <p><strong>VIN:</strong> ${form.vin || "N/A"}</p>
+      <p><strong>Vehicle:</strong> ${form.year} ${form.make} ${form.model}</p>
+      <p><strong>Mileage:</strong> ${form.mileage}</p>
+      <p><strong>Asking Price:</strong> ${form.price || "N/A"}</p>
+    
+      <p><strong>Message:</strong></p>
+      <p>${form.message || ""}</p>
+    
+      <hr/>
+    
+      <h3>Photos</h3>
+    
+      ${
+        form.images?.length
+          ? form.images
+              .map(
+                (url: string) =>
+                  `<p><a href="${url}" target="_blank">${url}</a></p>`
+              )
+              .join("")
+          : "<p>No photos uploaded.</p>"
+      }
+    `,
 
       text: `
 New Sell Your Car Submission

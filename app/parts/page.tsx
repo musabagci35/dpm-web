@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connectDB } from "@/lib/db";
+import { proThumb } from "@/lib/cloudinaryImage";
 import Part from "@/models/Part";
 
 export default async function PartsPage() {
@@ -35,7 +36,7 @@ export default async function PartsPage() {
               <div className="flex aspect-video items-center justify-center bg-gray-100">
                 {part.images?.[0]?.url ? (
                   <img
-                    src={part.images[0].url}
+                  src={proThumb(part.images[0].url)}
                     alt={part.title}
                     className="h-full w-full object-cover"
                   />

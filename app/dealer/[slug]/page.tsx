@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connectDB } from "@/lib/mongodb";
+import { proThumb } from "@/lib/cloudinaryImage";
 import Car from "@/models/Car";
 import VinHistory from "@/models/VinHistory";
 
@@ -221,7 +222,7 @@ export default async function DealerDashboardPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src={car?.images?.[0]?.url || "/car.png"}
+                    src={proThumb(car?.images?.[0]?.url || "/car.png")}
                       alt="Vehicle"
                       className="w-14 h-14 object-cover rounded-lg shrink-0"
                     />

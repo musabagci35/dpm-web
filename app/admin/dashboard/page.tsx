@@ -90,64 +90,98 @@ export default async function Dashboard() {
 
         <StatCard title="Conversion Rate" value={`${conversionRate}%`} />
       </div>
+      
 
-      {/* QUICK ACTIONS */}
-      <div className="grid md:grid-cols-4 gap-6">
-        <Link
-          href="/admin/add-car"
-          className="bg-black text-white p-6 rounded-xl hover:opacity-90"
-        >
-          <h2 className="font-bold text-lg">➕ Add Vehicle</h2>
-          <p className="text-sm text-white/70 mt-2">
-            Create a new inventory listing
-          </p>
-        </Link>
-        <Link
-  href="/admin/parts"
-  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+   {/* QUICK ACTIONS */}
+<div className="grid md:grid-cols-4 gap-6">
+
+<Link
+  href="/admin/add-car"
+  className="bg-black text-white p-6 rounded-xl hover:opacity-90"
 >
-  <h2 className="font-bold text-lg">🧰 Manage Parts</h2>
-  <p className="text-sm text-gray-500 mt-2">
-    Edit parts inventory, prices, and stock
+  <h2 className="font-bold text-lg">➕ Add Vehicle</h2>
+  <p className="text-sm text-white/70 mt-2">
+    Create a new inventory listing
   </p>
 </Link>
 
-        <Link
-          href="/admin/inventory"
-          className="bg-white border p-6 rounded-xl hover:bg-gray-100"
-        >
-          <h2 className="font-bold text-lg">🚗 Manage Inventory</h2>
-          <p className="text-sm text-gray-500 mt-2">
-            Edit vehicles, prices, photos, and status
-          </p>
-        </Link>
+<Link
+  href="/admin/inventory"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🚗 Manage Inventory</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Edit vehicles, prices, photos and status
+  </p>
+</Link>
 
-        <Link
-          href="/admin/leads"
-          className="bg-white border p-6 rounded-xl hover:bg-gray-100"
-        >
-          <h2 className="font-bold text-lg">📞 Lead CRM</h2>
-          <p className="text-sm text-gray-500 mt-2">
-            Follow up with customers and appointments
-          </p>
-        </Link>
-
-        <Link
-          href="/inventory"
-          className="bg-white border p-6 rounded-xl hover:bg-gray-100"
-        >
-          <h2 className="font-bold text-lg">🌐 Public Inventory</h2>
-          <p className="text-sm text-gray-500 mt-2">
-            View the customer-facing inventory page
-          </p>
-        </Link>
-        <Link
+<Link
   href="/admin/add-part"
   className="bg-white border p-6 rounded-xl hover:bg-gray-100"
 >
   <h2 className="font-bold text-lg">🔧 Add Part</h2>
   <p className="text-sm text-gray-500 mt-2">
-    Add engines, transmissions, bumpers, wheels and more
+    Add engines, transmissions, wheels and more
+  </p>
+</Link>
+
+<Link
+  href="/admin/parts"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🧰 Manage Parts</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Edit parts inventory and pricing
+  </p>
+</Link>
+
+<Link
+  href="/admin/leads"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">📞 Lead CRM</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Customer follow up and appointments
+  </p>
+</Link>
+
+<Link
+  href="/admin/vehicle-leads"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🚘 Vehicle Leads</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Sell Your Car submissions
+  </p>
+</Link>
+
+<Link
+  href="/admin/ebay"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🛒 eBay Tools</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Publish inventory to eBay
+  </p>
+</Link>
+
+<Link
+  href="/admin/photo-tools"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🖼️ Photo Tools</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Watermark and image tools
+  </p>
+</Link>
+
+<Link
+  href="/inventory"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">🌐 Public Inventory</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Customer vehicle inventory
   </p>
 </Link>
 
@@ -155,12 +189,23 @@ export default async function Dashboard() {
   href="/parts"
   className="bg-white border p-6 rounded-xl hover:bg-gray-100"
 >
-  <h2 className="font-bold text-lg">🛒 Public Parts</h2>
+  <h2 className="font-bold text-lg">🛍️ Public Parts</h2>
   <p className="text-sm text-gray-500 mt-2">
-    View the customer-facing parts page
+    Customer parts catalog
   </p>
 </Link>
-      </div>
+
+<Link
+  href="/sell-your-car"
+  className="bg-white border p-6 rounded-xl hover:bg-gray-100"
+>
+  <h2 className="font-bold text-lg">💰 Sell Your Car</h2>
+  <p className="text-sm text-gray-500 mt-2">
+    Test customer vehicle offers
+  </p>
+</Link>
+
+</div>
     </main>
   );
 }

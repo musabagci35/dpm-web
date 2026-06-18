@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { proThumb } from "@/lib/cloudinaryImage";
 
 type Img = {
   url: string;
@@ -87,7 +88,7 @@ export default function PhotoManager({ value, onChange }: Props) {
             className="relative border rounded-xl overflow-hidden group"
           >
             <img
-              src={img.url}
+              src={proThumb(img.url)}
               alt={`Vehicle photo ${index + 1}`}
               className="w-full h-32 object-cover"
             />

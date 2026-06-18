@@ -7,34 +7,73 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILES = 10;
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const formData = await req.formData();
+    const files = formData.getAll("files") as File[];
 
-    const file = body.file;
+    if (!files || files.length === 0) {
+      return NextResponse.json({ error: "No files" }, { status: 400 });
+    }
 
-    if (!file) {
+    if (files.length > MAX_FILES) {
       return NextResponse.json(
-        { error: "No file" },
+        { error: "Maximum 10 photos allowed" },
         { status: 400 }
       );
     }
 
-    const uploaded = await cloudinary.uploader.upload(file, {
-      folder: "driveprimemotors/parts",
-    });
+    const uploadedImages: string[] = [];
+
+    for (const file of files) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        return NextResponse.json(
+          { error: `Invalid file type: ${file.type}` },
+          { status: 400 }
+        );
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: "File too large. Maximum size is 5MB." },
+          { status: 400 }
+        );
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const uploaded: any = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            {
+              folder: "driveprimemotors/sell-your-car",
+              resource_type: "image",
+              overwrite: false,
+              unique_filename: true,
+            },
+            (error, result) => {
+              if (error || !result) reject(error);
+              else resolve(result);
+            }
+          )
+          .end(buffer);
+      });
+
+      uploadedImages.push(uploaded.secure_url);
+    }
 
     return NextResponse.json({
       success: true,
-      url: uploaded.secure_url,
-      publicId: uploaded.public_id,
+      images: uploadedImages,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Upload error:", error);
 
-    return NextResponse.json(
-      { error: "Upload failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }
