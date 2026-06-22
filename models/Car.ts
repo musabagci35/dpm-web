@@ -33,6 +33,7 @@ const CarSchema = new Schema(
     vin: { type: String, trim: true, index: true },
 
     description: { type: String, trim: true, default: "" },
+    videoUrl: { type: String, trim: true, default: "" },
 
     images: [ImageSchema],
 

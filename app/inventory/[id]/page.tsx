@@ -167,6 +167,23 @@ export default async function VehicleDetailPage({
                   <DetailRow label="Fuel Type" value="Gasoline" />
                   <DetailRow label="Transmission" value="Automatic" />
                 </div>
+                {car.videoUrl && (
+  <div className="mt-8">
+    <h3 className="text-xl font-bold mb-3">
+      Vehicle Video
+    </h3>
+
+    <div className="aspect-video overflow-hidden rounded-2xl">
+      <iframe
+        src={car.videoUrl
+          .replace("watch?v=", "embed/")
+          .replace("youtu.be/", "youtube.com/embed/")}
+        className="h-full w-full"
+        allowFullScreen
+      />
+    </div>
+  </div>
+)}
 
                 {car.description && (
                   <div className="mt-8">

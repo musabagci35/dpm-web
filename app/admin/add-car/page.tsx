@@ -108,6 +108,7 @@ const payload = {
   mileage: Number(formData.get("mileage") || 0),
   titleStatus: String(formData.get("titleStatus") || "unknown"),
   description: String(formData.get("description") || ""),
+  videoUrl: String(formData.get("videoUrl") || ""),
   images,
   status,
   isFeatured,
@@ -231,6 +232,11 @@ const payload = {
             Featured Vehicle
           </label>
         </div>
+        <input
+  name="videoUrl"
+  placeholder="YouTube Video URL"
+  className="border p-2 w-full"
+/>
 
         <textarea
           name="description"

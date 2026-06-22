@@ -405,6 +405,14 @@ export default function EditCarPage() {
             ${profit.toLocaleString()}
           </h2>
         </div>
+        <input
+  value={car.videoUrl || ""}
+  onChange={(e) =>
+    setCar({ ...car, videoUrl: e.target.value })
+  }
+  placeholder="YouTube Video URL"
+  className="w-full border p-3 rounded-xl mt-4"
+/>
 
         <textarea
           value={car.description || ""}

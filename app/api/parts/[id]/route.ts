@@ -98,7 +98,7 @@ export async function DELETE(_req: Request, { params }: Ctx) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, part: deleted });
   } catch (error) {
     console.error("DELETE PART ERROR:", error);
 

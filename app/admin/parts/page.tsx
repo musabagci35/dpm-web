@@ -6,7 +6,9 @@ import AdminPartsClient from "@/components/admin/AdminPartsClient";
 export default async function AdminPartsPage() {
   await connectDB();
 
-  const parts: any[] = await Part.find({})
+  const parts: any[] = await Part.find({
+    isActive: true,
+  })
     .sort({ createdAt: -1 })
     .lean();
 
