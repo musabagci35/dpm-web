@@ -27,41 +27,32 @@ export async function PATCH(req: Request, { params }: RouteContext) {
 
   const body = await req.json();
 
-  const updated = await Car.findByIdAndUpdate(
-    id,
-    {
-      title: body.title,
-      price: Number(body.price || 0),
-      mileage: Number(body.mileage || 0),
-      description: body.description || "",
-      isActive: !!body.isActive,
-      status: body.status || "available",
-      images: body.images || [],
-      cost: Number(body.cost || 0),
-      recon: Number(body.recon || 0),
-      marketing: Number(body.marketing || 0),
-      docFee: Number(body.docFee || 0),
-    },
-    { new: true }
-  ).lean();
+  const update: any = {};
+
+  if ("title" in body) update.title = body.title;
+  if ("price" in body) update.price = Number(body.price || 0);
+  if ("mileage" in body) update.mileage = Number(body.mileage || 0);
+  if ("description" in body) update.description = body.description || "";
+  if ("isActive" in body) update.isActive = body.isActive;
+  if ("status" in body) update.status = body.status;
+  if ("images" in body) update.images = body.images;
+  if ("cost" in body) update.cost = Number(body.cost || 0);
+  if ("recon" in body) update.recon = Number(body.recon || 0);
+  if ("marketing" in body) update.marketing = Number(body.marketing || 0);
+  if ("docFee" in body) update.docFee = Number(body.docFee || 0);
+
+  if (update.status === "sold" || update.status === "archived") {
+    update.isActive = false;
+  }
+
+  const updated = await Car.findByIdAndUpdate(id, update, {
+    new: true,
+    runValidators: true,
+  }).lean();
 
   if (!updated) {
     return NextResponse.json({ error: "Car not found" }, { status: 404 });
   }
 
   return NextResponse.json(updated);
-}
-
-export async function DELETE(_req: Request, { params }: RouteContext) {
-  const { id } = await params;
-
-  await connectDB();
-
-  const deleted = await Car.findByIdAndDelete(id).lean();
-
-  if (!deleted) {
-    return NextResponse.json({ error: "Car not found" }, { status: 404 });
-  }
-
-  return NextResponse.json({ ok: true });
 }
