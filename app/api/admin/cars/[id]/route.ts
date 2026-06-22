@@ -62,14 +62,7 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
 
     await connectDB();
 
-    const deleted = await Car.findByIdAndUpdate(
-      id,
-      {
-        isActive: false,
-        status: "archived",
-      },
-      { new: true }
-    ).lean();
+    const deleted = await Car.findByIdAndDelete(id).lean();
 
     if (!deleted) {
       return NextResponse.json({ error: "Car not found" }, { status: 404 });
