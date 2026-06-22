@@ -26,7 +26,6 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   await connectDB();
 
   const body = await req.json();
-
   const update: any = {};
 
   if ("title" in body) update.title = body.title;
@@ -55,4 +54,34 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   }
 
   return NextResponse.json(updated);
+}
+
+export async function DELETE(_req: Request, { params }: RouteContext) {
+  try {
+    const { id } = await params;
+
+    await connectDB();
+
+    const deleted = await Car.findByIdAndUpdate(
+      id,
+      {
+        isActive: false,
+        status: "archived",
+      },
+      { new: true }
+    ).lean();
+
+    if (!deleted) {
+      return NextResponse.json({ error: "Car not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, car: deleted });
+  } catch (error) {
+    console.error("DELETE CAR ERROR:", error);
+
+    return NextResponse.json(
+      { error: "Failed to delete vehicle" },
+      { status: 500 }
+    );
+  }
 }
