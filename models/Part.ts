@@ -76,6 +76,37 @@ const PartSchema = new Schema(
       type: String,
       default: "",
     },
+    // Auto Pricing
+
+autoReprice: {
+  type: Boolean,
+  default: false,
+},
+
+minPrice: {
+  type: Number,
+  default: 0,
+},
+
+targetPrice: {
+  type: Number,
+  default: 0,
+},
+
+undercutAmount: {
+  type: Number,
+  default: 1,
+},
+
+lastCompetitorPrice: {
+  type: Number,
+  default: 0,
+},
+
+lastRepricedAt: {
+  type: Date,
+  default: null,
+},
   },
   {
     timestamps: true,
