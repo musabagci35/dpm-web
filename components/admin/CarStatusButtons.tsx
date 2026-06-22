@@ -42,6 +42,21 @@ export default function CarStatusButtons({ carId }: { carId: string }) {
       alert("Failed to hide vehicle");
     }
   }
+  async function deleteVehicle() {
+    const ok = confirm("Delete this vehicle permanently? This cannot be undone.");
+    if (!ok) return;
+  
+    const res = await fetch(`/api/admin/cars/${carId}`, {
+      method: "DELETE",
+    });
+  
+    if (res.ok) {
+      alert("Vehicle deleted ✅");
+      window.location.reload();
+    } else {
+      alert("Failed to delete vehicle");
+    }
+  }
 
   return (
     <>
@@ -60,6 +75,13 @@ export default function CarStatusButtons({ carId }: { carId: string }) {
       >
         Hide
       </button>
+      <button
+  type="button"
+  onClick={deleteVehicle}
+  className="border border-red-600 text-red-600 px-4 py-2 rounded-xl text-center"
+>
+  Delete
+</button>
     </>
   );
 }
