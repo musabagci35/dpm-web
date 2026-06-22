@@ -38,7 +38,9 @@ export default function PartPhotoManager({ value, onChange }: Props) {
 
         const res = await fetch("/api/upload-part", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ file: base64 }),
         });
 
@@ -147,7 +149,7 @@ export default function PartPhotoManager({ value, onChange }: Props) {
             className="group relative overflow-hidden rounded-xl border bg-white"
           >
             <img
-           src={proThumb(img.url)}
+              src={proThumb(img.url)}
               alt={`Part image ${index + 1}`}
               onClick={() => setPreview(img.url)}
               className="h-40 w-full cursor-pointer object-cover"
@@ -202,7 +204,7 @@ export default function PartPhotoManager({ value, onChange }: Props) {
           </button>
 
           <img
-           src={proImage(preview)}
+            src={proImage(preview)}
             alt="Preview"
             className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
           />

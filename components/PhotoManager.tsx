@@ -17,16 +17,43 @@ type Props = {
 export default function PhotoManager({ value, onChange }: Props) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  function handleUpload(files: FileList | null) {
+  async function handleUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
-
-    const newImages: Img[] = Array.from(files).map((file, index) => ({
-      url: URL.createObjectURL(file),
-      publicId: file.name,
-      isCover: value.length === 0 && index === 0,
-    }));
-
-    onChange([...value, ...newImages]);
+  
+    const uploadedImages: Img[] = [];
+  
+    for (const file of Array.from(files)) {
+      const reader = new FileReader();
+  
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+  
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ file: base64 }),
+      });
+  
+      const result = await res.json();
+  
+      if (!res.ok || !result.success) {
+        alert(result.error || "Image upload failed");
+        continue;
+      }
+  
+      uploadedImages.push({
+        url: result.url,
+        publicId: result.publicId,
+        isCover: value.length === 0 && uploadedImages.length === 0,
+      });
+    }
+  
+    onChange([...value, ...uploadedImages]);
   }
 
   function setCover(index: number) {
