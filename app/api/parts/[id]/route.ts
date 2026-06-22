@@ -85,7 +85,11 @@ export async function DELETE(_req: Request, { params }: Ctx) {
 
     await connectDB();
 
-    const deleted = await Part.findByIdAndDelete(id).lean();
+    const deleted = await Part.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true }
+    ).lean();
 
     if (!deleted) {
       return NextResponse.json(
