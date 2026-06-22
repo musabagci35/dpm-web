@@ -47,23 +47,20 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const slug = body.title
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-
-    const existing = await Part.findOne({ slug });
-
-    if (existing) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Part already exists",
-        },
-        { status: 409 }
-      );
-    }
+    const baseSlug = String(body.title || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/^-+|-+$/g, "");
+  
+  let slug = baseSlug || `part-${Date.now()}`;
+  
+  let counter = 1;
+  while (await Part.findOne({ slug })) {
+    slug = `${baseSlug || "part"}-${Date.now()}-${counter}`;
+    counter++;
+  }
 
     const sku = body.sku?.trim()
       ? body.sku.trim()
