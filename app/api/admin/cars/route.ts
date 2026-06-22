@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
 
 export async function POST(req: Request) {

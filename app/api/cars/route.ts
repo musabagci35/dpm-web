@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/requireAdmin";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
 
 const imageSchema = z.object({

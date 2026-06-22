@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 import { proThumb } from "@/lib/cloudinaryImage";
 import Part from "@/models/Part";
 
