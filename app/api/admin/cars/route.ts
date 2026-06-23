@@ -29,6 +29,15 @@ export async function POST(req: Request) {
 
     const status = body.status || "available";
 
+    const baseSlug = makeSlug(body);
+    let finalSlug = baseSlug;
+    let count = 1;
+
+    while (await Car.findOne({ slug: finalSlug })) {
+      finalSlug = `${baseSlug}-${Date.now()}-${count}`;
+      count++;
+    }
+
     const car = await Car.create({
       title: body.title,
       vin: body.vin || "",
@@ -42,12 +51,13 @@ export async function POST(req: Request) {
       status,
       isActive: status === "sold" || status === "archived" ? false : true,
       isFeatured: Boolean(body.isFeatured),
-      slug: makeSlug(body),
+      slug: finalSlug,
     });
 
     return NextResponse.json({ success: true, car }, { status: 201 });
   } catch (err) {
     console.error("CREATE CAR ERROR:", err);
+
     return NextResponse.json(
       { success: false, error: "Failed to create car" },
       { status: 500 }
