@@ -60,21 +60,17 @@ export async function POST(req: Request) {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
 
-    const existingCar = await Car.findOne({ slug });
-
-    if (existingCar) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "This vehicle already exists",
-        },
-        { status: 409 }
-      );
-    }
+      let finalSlug = slug;
+      let count = 1;
+      
+      while (await Car.findOne({ slug: finalSlug })) {
+        finalSlug = `${slug}-${Date.now()}-${count}`;
+        count++;
+      }
 
     const created = await Car.create({
       ...data,
-      slug,
+      slug: finalSlug,
     });
 
     return NextResponse.json(
