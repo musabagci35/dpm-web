@@ -50,6 +50,13 @@ export default async function VehicleDetailPage({
     : await Car.findOne({ slug: id }).lean();
 
   if (!carRaw) return notFound();
+  if (
+    carRaw.status === "archived" ||
+    carRaw.status === "sold" ||
+    carRaw.isActive === false
+  ) {
+    return notFound();
+  }
 
   const car = {
     ...carRaw,

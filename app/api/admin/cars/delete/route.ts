@@ -17,12 +17,20 @@ export async function POST(req: Request) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid car ID" }, { status: 400 });
     }
-    await Car.findByIdAndUpdate(id, {
-      isActive: false,
-      status: "archived",
-    });
-
-    return NextResponse.json({ success: true });
+    const updated = await Car.findByIdAndUpdate(
+      id,
+      {
+        isActive: false,
+        status: "archived",
+      },
+      { new: true }
+    ).lean();
+    
+    if (!updated) {
+      return NextResponse.json({ error: "Car not found" }, { status: 404 });
+    }
+    
+    return NextResponse.json({ success: true, car: updated });
   } catch (error) {
     console.error("DELETE CAR ERROR:", error);
     return NextResponse.json({ error: "Failed to remove car" }, { status: 500 });

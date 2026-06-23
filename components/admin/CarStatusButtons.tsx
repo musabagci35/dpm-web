@@ -53,13 +53,15 @@ export default function CarStatusButtons({ carId }: { carId: string }) {
     });
   
     const data = await res.json();
-  
-    if (data.success) {
-      alert("Vehicle deleted ✅");
-      window.location.reload();
-    } else {
-      alert(data.error || "Failed to delete vehicle");
-    }
+
+console.log("DELETE RESPONSE:", data);
+
+if (res.ok) {
+  alert("Vehicle deleted ✅");
+  window.location.reload();
+} else {
+  alert(data.error || "Failed to delete vehicle");
+}
   }
 
   return (

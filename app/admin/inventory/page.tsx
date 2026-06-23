@@ -14,7 +14,10 @@ function statusClass(status: string) {
 
 export default async function AdminInventoryPage() {
   await connectDB();
-  const cars = await Car.find({})
+  const cars = await Car.find({
+    isActive: true,
+    status: { $nin: ["sold", "archived"] },
+  })
   
     .sort({ isFeatured: -1, createdAt: -1 })
     .lean();

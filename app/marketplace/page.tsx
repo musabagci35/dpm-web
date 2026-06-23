@@ -10,7 +10,7 @@ export default async function MarketplacePage() {
 
   const cars = await Car.find({
     isActive: true,
-    status: "available",
+    status: { $nin: ["sold", "archived"] },
   }).lean();
   return (
     <div className="max-w-6xl mx-auto p-6">
