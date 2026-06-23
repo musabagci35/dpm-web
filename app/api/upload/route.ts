@@ -7,43 +7,47 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_FILES = 10;
-
 export async function POST(req: Request) {
   try {
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const body = await req.json();
+
+      if (!body.file) {
+        return NextResponse.json(
+          { success: false, error: "No file" },
+          { status: 400 }
+        );
+      }
+
+      const uploaded = await cloudinary.uploader.upload(body.file, {
+        folder: "driveprimemotors/vehicles",
+        resource_type: "image",
+        overwrite: false,
+        unique_filename: true,
+      });
+
+      return NextResponse.json({
+        success: true,
+        url: uploaded.secure_url,
+        publicId: uploaded.public_id,
+      });
+    }
+
     const formData = await req.formData();
     const files = formData.getAll("files") as File[];
 
     if (!files || files.length === 0) {
-      return NextResponse.json({ error: "No files" }, { status: 400 });
-    }
-
-    if (files.length > MAX_FILES) {
       return NextResponse.json(
-        { error: "Maximum 10 photos allowed" },
+        { success: false, error: "No files" },
         { status: 400 }
       );
     }
 
-    const uploadedImages: string[] = [];
+    const uploadedImages = [];
 
     for (const file of files) {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        return NextResponse.json(
-          { error: `Invalid file type: ${file.type}` },
-          { status: 400 }
-        );
-      }
-
-      if (file.size > MAX_FILE_SIZE) {
-        return NextResponse.json(
-          { error: "File too large. Maximum size is 5MB." },
-          { status: 400 }
-        );
-      }
-
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
@@ -51,7 +55,7 @@ export async function POST(req: Request) {
         cloudinary.uploader
           .upload_stream(
             {
-              folder: "driveprimemotors/sell-your-car",
+              folder: "driveprimemotors/vehicles",
               resource_type: "image",
               overwrite: false,
               unique_filename: true,
@@ -64,7 +68,10 @@ export async function POST(req: Request) {
           .end(buffer);
       });
 
-      uploadedImages.push(uploaded.secure_url);
+      uploadedImages.push({
+        url: uploaded.secure_url,
+        publicId: uploaded.public_id,
+      });
     }
 
     return NextResponse.json({
@@ -74,6 +81,9 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Upload error:", error);
 
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Upload failed" },
+      { status: 500 }
+    );
   }
 }
