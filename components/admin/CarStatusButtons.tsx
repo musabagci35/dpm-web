@@ -43,18 +43,22 @@ export default function CarStatusButtons({ carId }: { carId: string }) {
     }
   }
   async function deleteVehicle() {
-    const ok = confirm("Delete this vehicle permanently? This cannot be undone.");
+    const ok = confirm("Delete this vehicle?");
     if (!ok) return;
   
-    const res = await fetch(`/api/admin/cars/${carId}`, {
-      method: "DELETE",
+    const res = await fetch("/api/admin/cars/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: carId }),
     });
   
-    if (res.ok) {
+    const data = await res.json();
+  
+    if (data.success) {
       alert("Vehicle deleted ✅");
       window.location.reload();
     } else {
-      alert("Failed to delete vehicle");
+      alert(data.error || "Failed to delete vehicle");
     }
   }
 
