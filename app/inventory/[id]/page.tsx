@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/mongodb";
@@ -9,6 +10,16 @@ import Gallery from "./Gallery";
 import DetailLeadForm from "./DetailLeadForm";
 import MobileCTA from "./MobileCTA";
 import AppointmentForm from "./AppointmentForm";
+
+function maskVin(vin?: string) {
+  if (!vin) return "N/A";
+  return `***********${vin.slice(-6).toUpperCase()}`;
+}
+
+function formatMileage(mileage?: number | null) {
+  if (!mileage || mileage <= 0) return "N/A";
+  return `${Number(mileage).toLocaleString()} miles`;
+}
 
 function buildSchema(
   car: any,
@@ -50,6 +61,7 @@ export default async function VehicleDetailPage({
     : await Car.findOne({ slug: id }).lean();
 
   if (!carRaw) return notFound();
+
   if (
     carRaw.status === "archived" ||
     carRaw.status === "sold" ||
@@ -63,7 +75,10 @@ export default async function VehicleDetailPage({
     _id: carRaw._id.toString(),
   };
 
-  const title = car.title || `${car.year} ${car.make} ${car.model}`;
+  const title =
+    car.title ||
+    `${car.year} ${car.make} ${car.model} ${car.trim || ""}`.trim();
+
   const price = Number(car.price || 0);
   const mileage = car.mileage ? Number(car.mileage) : null;
   const docFee = Number(car.docFee || 0);
@@ -96,31 +111,28 @@ export default async function VehicleDetailPage({
         }}
       />
 
-      {/* TOP PROMO BAR */}
-      <section className="bg-red-700 py-3 text-center text-sm font-bold text-white">
-        Quality Pre-Owned Vehicles • Easy Financing • Rancho Cordova, CA
+      <section className="bg-red-700 py-3 text-center text-sm font-black text-white">
+        Quality Pre-Owned Vehicles • Easy Financing • Sacramento Area Dealer
       </section>
 
       <main className="min-h-screen bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 py-8">
-          {/* BREADCRUMB */}
           <div className="mb-5 text-sm text-gray-500">
-            <Link href="/" className="hover:underline">
+            <Link href="/" className="hover:text-red-600">
               Drive Prime Motors
             </Link>{" "}
             /{" "}
-            <Link href="/inventory" className="hover:underline">
+            <Link href="/inventory" className="hover:text-red-600">
               Inventory
             </Link>{" "}
-            / <span>{title}</span>
+            / <span className="text-gray-800">{title}</span>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-[1fr_390px]">
-            {/* LEFT SIDE */}
-            <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+          <div className="grid gap-8 lg:grid-cols-[1fr_410px]">
+            <section className="overflow-hidden rounded-3xl border bg-white shadow-sm">
               <div className="relative">
                 {car.isFeatured && (
-                  <div className="absolute left-0 top-0 z-10 bg-red-700 px-5 py-2 text-xs font-bold uppercase text-white">
+                  <div className="absolute left-4 top-4 z-10 rounded-full bg-red-700 px-4 py-2 text-xs font-black uppercase text-white shadow">
                     Featured Vehicle
                   </div>
                 )}
@@ -128,85 +140,130 @@ export default async function VehicleDetailPage({
                 <Gallery images={images} />
               </div>
 
-              <div className="border-t p-5">
-                <h1 className="text-3xl font-extrabold">{title}</h1>
+              <div className="border-t p-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <h1 className="text-3xl font-black tracking-tight md:text-4xl">
+                      {title}
+                    </h1>
 
-                <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
-                  <span>
-                    {mileage ? mileage.toLocaleString() : "N/A"} miles
-                  </span>
-                  <span>VIN: {car.vin || "N/A"}</span>
-                  <span>Status: {(car.status || "available").toUpperCase()}</span>
+                    <div className="mt-3 flex flex-wrap gap-3 text-sm text-gray-600">
+                      <span className="rounded-full bg-gray-100 px-3 py-2 font-semibold">
+                        {formatMileage(mileage)}
+                      </span>
+                      <span className="rounded-full bg-gray-100 px-3 py-2 font-semibold">
+                        VIN: {maskVin(car.vin)}
+                      </span>
+                      <span className="rounded-full bg-green-100 px-3 py-2 font-black text-green-700">
+                        {(car.status || "available").toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-green-50 p-4 text-right">
+                    <p className="text-xs font-bold uppercase tracking-wide text-green-700">
+                      Internet Price
+                    </p>
+                    <p className="text-3xl font-black text-green-700">
+                      ${salePrice.toLocaleString()}
+                    </p>
+                    {monthly > 0 && (
+                      <p className="text-sm font-semibold text-green-800">
+                        Est. ${monthly.toLocaleString()}/mo
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="border-t bg-white p-5">
-                <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
-                  <div className="text-sm font-semibold text-gray-700">
-                    This vehicle is available now. Contact us to confirm before
-                    visiting.
+              <div className="border-t bg-white p-6">
+                <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-black text-gray-900">
+                      This vehicle is available now.
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Call before visiting to confirm availability and schedule a test drive.
+                    </p>
                   </div>
 
                   <a
                     href="tel:+19162618880"
-                    className="rounded-lg bg-red-700 px-4 py-2 text-sm font-bold text-white"
+                    className="rounded-xl bg-red-700 px-5 py-3 text-center text-sm font-black text-white hover:bg-red-800"
                   >
-                    Call
+                    Call (916) 261-8880
                   </a>
                 </div>
               </div>
 
               <div className="border-t p-6">
-                <h2 className="mb-4 text-xl font-bold">
-                  {title} Details
-                </h2>
+                <h2 className="mb-5 text-2xl font-black">{title} Details</h2>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <DetailRow label="Condition" value="Pre-owned" />
                   <DetailRow label="Year" value={car.year} />
                   <DetailRow label="Make" value={car.make} />
                   <DetailRow label="Model" value={car.model} />
+                  {car.trim && <DetailRow label="Trim" value={car.trim} />}
+                  <DetailRow label="Mileage" value={formatMileage(mileage)} />
+                  <DetailRow label="VIN" value={maskVin(car.vin)} />
                   <DetailRow
-                    label="Mileage"
-                    value={mileage ? mileage.toLocaleString() : "N/A"}
+                    label="Status"
+                    value={(car.status || "available").toUpperCase()}
                   />
-                  <DetailRow label="VIN" value={car.vin || "N/A"} />
-                  <DetailRow label="Fuel Type" value="Gasoline" />
-                  <DetailRow label="Transmission" value="Automatic" />
                 </div>
-                {car.videoUrl && (
-  <div className="mt-8">
-    <h3 className="text-xl font-bold mb-3">
-      Vehicle Video
-    </h3>
 
-    <div className="aspect-video overflow-hidden rounded-2xl">
-      <iframe
-        src={car.videoUrl
-          .replace("watch?v=", "embed/")
-          .replace("youtu.be/", "youtube.com/embed/")}
-        className="h-full w-full"
-        allowFullScreen
-      />
-    </div>
-  </div>
-)}
+                {car.videoUrl && (
+                  <div className="mt-8">
+                    <h3 className="mb-3 text-xl font-black">Vehicle Video</h3>
+
+                    <div className="aspect-video overflow-hidden rounded-2xl">
+                      <iframe
+                        src={car.videoUrl
+                          .replace("watch?v=", "embed/")
+                          .replace("youtu.be/", "youtube.com/embed/")}
+                        className="h-full w-full"
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {car.description && (
                   <div className="mt-8">
-                    <h3 className="mb-3 text-lg font-bold">Description</h3>
-                    <p className="leading-relaxed text-gray-700">
+                    <h3 className="mb-3 text-xl font-black">Description</h3>
+                    <p className="whitespace-pre-line leading-relaxed text-gray-700">
                       {car.description}
                     </p>
                   </div>
                 )}
 
+                <div className="mt-8 grid gap-4 md:grid-cols-3">
+                  <TrustCard
+                    title="Dealer Inspected"
+                    text="Reviewed before being listed for sale."
+                  />
+                  <TrustCard
+                    title="Financing Available"
+                    text="Apply online and move forward faster."
+                  />
+                  <TrustCard
+                    title="Trade-Ins Welcome"
+                    text="Sell or trade your current vehicle."
+                  />
+                </div>
+
                 {car.vin && (
-                  <div className="mt-8 rounded-xl border bg-blue-50 p-5">
-                    <p className="font-semibold">Vehicle history available</p>
+                  <div className="mt-8 rounded-2xl border bg-blue-50 p-5">
+                    <p className="font-black text-blue-950">
+                      Vehicle history available
+                    </p>
+                    <p className="mt-1 text-sm text-blue-800">
+                      View available VIN information for this vehicle.
+                    </p>
                     <Link
                       href={`/vin/${car.vin}`}
-                      className="mt-2 inline-block text-blue-700 underline"
+                      className="mt-3 inline-block font-black text-blue-700 underline"
                     >
                       View VIN Report →
                     </Link>
@@ -215,71 +272,82 @@ export default async function VehicleDetailPage({
               </div>
             </section>
 
-            {/* RIGHT PRICE CARD */}
-            <aside className="h-fit rounded-2xl border bg-white p-6 shadow-sm lg:sticky lg:top-24">
-              <p className="text-sm text-gray-500">Price</p>
-              <div className="mt-1 text-3xl font-extrabold">
+            <aside className="h-fit rounded-3xl border bg-white p-6 shadow-sm lg:sticky lg:top-28">
+              <div className="mb-4 rounded-xl bg-green-100 px-4 py-3 text-center text-sm font-black text-green-700">
+                ✓ Available Today • Call Before Visiting
+              </div>
+
+              <p className="text-sm font-semibold text-gray-500">Internet Price</p>
+              <div className="mt-1 text-4xl font-black text-gray-900">
                 ${salePrice.toLocaleString()}
               </div>
 
-              <div className="mt-4 rounded-xl border bg-gray-50 p-4">
-                <div className="flex justify-between text-sm">
-                  <span className="font-bold">Estimated Payment</span>
-                  <span>${monthly.toLocaleString()} / mo.</span>
+              {monthly > 0 && (
+                <div className="mt-4 rounded-2xl border bg-gray-50 p-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-black">Estimated Payment</span>
+                    <span className="font-black text-green-700">
+                      ${monthly.toLocaleString()} / mo.
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Estimate only. Final terms may vary.
+                  </p>
                 </div>
-              </div>
+              )}
 
               <div className="mt-5 space-y-2 text-sm">
-                <PriceRow label="Original price" value={price} />
-                <PriceRow label="Dealer Documentation Fee" value={docFee} />
+                <PriceRow label="Vehicle price" value={price} />
+                {docFee > 0 && (
+                  <PriceRow label="Dealer documentation fee" value={docFee} />
+                )}
                 <div className="border-t pt-2">
-                  <PriceRow label="Sale price" value={salePrice} bold />
+                  <PriceRow label="Listed price" value={salePrice} bold />
                 </div>
               </div>
 
-              <div className="mt-5 rounded-xl border p-3 text-sm">
-                📍 Drive Prime Motors LLC — Rancho Cordova, CA
+              <div className="mt-5 rounded-2xl bg-blue-50 p-4">
+                <h3 className="font-black text-blue-950">Financing Available</h3>
+                <p className="mt-1 text-sm text-blue-800">
+                  Bad Credit? No Credit? First-Time Buyer? Apply online today.
+                </p>
+              </div>
+
+              <div className="mt-5 rounded-2xl border p-4 text-sm font-semibold text-gray-700">
+                📍 Drive Prime Motors LLC — Sacramento / Rancho Cordova Area
               </div>
 
               <div className="mt-5 space-y-3">
                 <a
                   href="tel:+19162618880"
-                  className="block rounded-xl bg-red-700 py-3 text-center font-bold text-white hover:bg-red-800"
+                  className="block rounded-2xl bg-red-700 py-4 text-center font-black text-white hover:bg-red-800"
                 >
                   Confirm Availability
                 </a>
 
                 <Link
                   href="/financing"
-                  className="block rounded-xl border py-3 text-center font-bold hover:bg-gray-50"
+                  className="block rounded-2xl border py-4 text-center font-black hover:bg-gray-50"
                 >
                   Get Approved
                 </Link>
 
                 <a
                   href="#schedule"
-                  className="block rounded-xl border py-3 text-center font-bold hover:bg-gray-50"
+                  className="block rounded-2xl border py-4 text-center font-black hover:bg-gray-50"
                 >
                   Schedule Test Drive
                 </a>
               </div>
 
-              <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-xl border text-center text-sm">
-                <button className="p-4 hover:bg-gray-50">Share</button>
-                <a href="#questions" className="border-x p-4 hover:bg-gray-50">
-                  Questions?
-                </a>
-                <button className="p-4 hover:bg-gray-50">Save</button>
-              </div>
-
-              <div className="mt-5 rounded-xl bg-red-700 p-5 text-white">
-                <div className="text-lg font-bold">What’s your car worth?</div>
-                <p className="text-sm text-white/80">
-                  Get your trade-in value today.
+              <div className="mt-5 rounded-2xl bg-red-700 p-5 text-white">
+                <div className="text-lg font-black">What’s your car worth?</div>
+                <p className="mt-1 text-sm text-white/80">
+                  Get a fast trade-in or sell-your-car offer today.
                 </p>
                 <Link
                   href="/sell-your-car"
-                  className="mt-3 inline-block rounded-lg bg-white px-4 py-2 text-sm font-bold text-red-700"
+                  className="mt-3 inline-block rounded-xl bg-white px-4 py-2 text-sm font-black text-red-700"
                 >
                   Trade / Sell
                 </Link>
@@ -304,9 +372,21 @@ export default async function VehicleDetailPage({
 
 function DetailRow({ label, value }: { label: string; value: any }) {
   return (
-    <div className="grid grid-cols-2 border-b py-3 text-sm">
+    <div className="rounded-2xl border bg-gray-50 p-4 text-sm">
       <div className="font-semibold text-gray-500">{label}</div>
-      <div className="font-medium">{value}</div>
+      <div className="mt-1 font-black text-gray-900">{value}</div>
+    </div>
+  );
+}
+
+function TrustCard({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 font-black text-red-700">
+        ✓
+      </div>
+      <h3 className="font-black">{title}</h3>
+      <p className="mt-1 text-sm text-gray-600">{text}</p>
     </div>
   );
 }
@@ -322,8 +402,8 @@ function PriceRow({
 }) {
   return (
     <div className="flex justify-between">
-      <span className={bold ? "font-bold" : "text-gray-600"}>{label}</span>
-      <span className={bold ? "font-bold" : ""}>
+      <span className={bold ? "font-black" : "text-gray-600"}>{label}</span>
+      <span className={bold ? "font-black" : ""}>
         ${Number(value || 0).toLocaleString()}
       </span>
     </div>
