@@ -73,6 +73,33 @@ export default async function VinReportResultPage({ searchParams }: Props) {
           </p>
         </div>
       </section>
+      <section className="mx-auto max-w-7xl px-6 pt-10">
+  <form
+    action="/vin-report/result"
+    method="GET"
+    className="rounded-3xl border bg-white p-5 shadow-sm"
+  >
+    <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-red-600">
+      Check Another VIN
+    </p>
+
+    <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+      <input
+        name="vin"
+        placeholder="Enter another 17-character VIN"
+        maxLength={17}
+        className="h-14 rounded-2xl border px-4 font-bold uppercase outline-none focus:border-red-600"
+      />
+
+      <button
+        type="submit"
+        className="h-14 rounded-2xl bg-red-600 px-7 font-black text-white hover:bg-red-700"
+      >
+        Check VIN
+      </button>
+    </div>
+  </form>
+</section>
 
       <section className="mx-auto max-w-7xl px-6 py-12">
         <div className="mb-8 rounded-3xl border border-yellow-200 bg-yellow-50 p-6 text-yellow-900">
