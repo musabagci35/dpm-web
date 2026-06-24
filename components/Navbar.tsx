@@ -18,7 +18,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur">
-      <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6">
+      <div className="mx-auto flex h-28 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center">
           <Image
             src="/logo.png"
@@ -26,7 +26,7 @@ export default function Navbar() {
             width={320}
             height={110}
             priority
-            className="h-14 w-auto"
+            className="h-20 md:h-24 w-auto object-contain"
           />
         </Link>
 
