@@ -133,7 +133,9 @@ Body: ${vinData.body || "N/A"}`,
             console.error("Image upload failed, continuing without photos");
           } else {
             const img = await upload.json();
-            uploadedImages = img.images || [];
+            uploadedImages = Array.isArray(img.images)
+            ? img.images.map((image: any) => image.url || image).filter(Boolean)
+            : [];
           }
         } catch (uploadError) {
           console.error("Image upload crashed, continuing without photos", uploadError);
