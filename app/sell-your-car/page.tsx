@@ -123,16 +123,20 @@ Body: ${vinData.body || "N/A"}`,
           fd.append("files", images[i]);
         }
 
-        const upload = await fetch("/api/upload", {
-          method: "POST",
-          body: fd,
-        });
-
-        if (!upload.ok) {
-          console.error("Image upload failed, continuing without photos");
-        } else {
-          const img = await upload.json();
-          uploadedImages = img.images || [];
+        try {
+          const upload = await fetch("/api/upload", {
+            method: "POST",
+            body: fd,
+          });
+        
+          if (!upload.ok) {
+            console.error("Image upload failed, continuing without photos");
+          } else {
+            const img = await upload.json();
+            uploadedImages = img.images || [];
+          }
+        } catch (uploadError) {
+          console.error("Image upload crashed, continuing without photos", uploadError);
         }
       }
 
