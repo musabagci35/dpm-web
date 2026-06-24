@@ -81,7 +81,7 @@ export default function Footer() {
               <p>Rancho Cordova, California</p>
               <p>Mon - Fri: 9:00 AM - 6:00 PM</p>
               <p>Saturday: By Appointment</p>
-              <p>Sunday: Closed</p>
+              <p>Sunday: 10:00 AM - 5:00 PM</p>
 
               <a
                 href="mailto:sales@driveprimemotors.com"
