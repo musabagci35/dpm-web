@@ -129,11 +129,11 @@ Body: ${vinData.body || "N/A"}`,
         });
 
         if (!upload.ok) {
-          throw new Error("Image upload failed");
+          console.error("Image upload failed, continuing without photos");
+        } else {
+          const img = await upload.json();
+          uploadedImages = img.images || [];
         }
-
-        const img = await upload.json();
-        uploadedImages = img.images || [];
       }
 
       const res = await fetch("/api/sell-your-car", {
