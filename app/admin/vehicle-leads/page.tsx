@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import Link from "next/link";
 import DeleteVehicleLeadButton from "@/components/admin/DeleteVehicleLeadButton";
 import { proThumb } from "@/lib/cloudinaryImage";
