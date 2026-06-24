@@ -21,12 +21,12 @@ export default function Navbar() {
       <div className="mx-auto flex h-28 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center">
           <Image
-            src="/logo.png"
+            src="/logo-header.png"
             alt="Drive Prime Motors"
             width={320}
             height={110}
             priority
-            className="h-20 md:h-24 w-auto object-contain"
+            className="h-24 md:h-28 w-auto object-contain"
           />
         </Link>
 
