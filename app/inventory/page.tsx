@@ -66,7 +66,7 @@ export default async function InventoryPage({ searchParams }: Props) {
       query.model = { $regex: escapeRegex(params.model), $options: "i" };
     }
 
-    if (params.price && !isNaN(Number(params.price))) {
+    if (params.price && Number(params.price) > 0 && !isNaN(Number(params.price))) {
       query.price = { $lte: Number(params.price) };
     }
 
