@@ -115,7 +115,7 @@ const payload = {
 };
 
     try {
-      const res = await fetch("/api/cars", {
+      const res = await fetch("/api/admin/cars", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

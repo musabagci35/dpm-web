@@ -51,7 +51,7 @@ export default async function AdminInventoryPage() {
               }`}
             >
               <img
-                src={proThumb(car.images?.[0]?.url || "/car.png")}
+                src={proThumb((car.images?.find((img: any) => img.isCover)?.url || car.images?.[0]?.url || "/car.png"))}
                 alt={`${car.year} ${car.make} ${car.model}`}
                 className="w-40 h-28 object-cover rounded-xl"
               />
