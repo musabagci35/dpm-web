@@ -204,6 +204,9 @@ export default async function Dashboard() {
     Test customer vehicle offers
   </p>
 </Link>
+<Link href="/admin/auction-center">
+  Auction Center
+</Link>
 
 </div>
     </main>

@@ -44,6 +44,15 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     update.isActive = false;
   }
 
+  if (
+    update.marketing === undefined ||
+    update.marketing === null ||
+    typeof update.marketing !== "object" ||
+    Number.isNaN(update.marketing)
+  ) {
+    delete update.marketing;
+  }
+
   const updated = await Car.findByIdAndUpdate(id, update, {
     new: true,
     runValidators: true,

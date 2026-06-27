@@ -26,6 +26,9 @@ export default function EditCarPage() {
   const [saving, setSaving] = useState(false);
   const [car, setCar] = useState<any>(null);
   const [images, setImages] = useState<Img[]>([]);
+  const [assistant, setAssistant] = useState<any>(null);
+  const [assistantLoading, setAssistantLoading] = useState(false);
+
   const [listings, setListings] = useState<Listings>({
     facebook: "",
     craigslist: "",
@@ -47,6 +50,22 @@ export default function EditCarPage() {
     })();
   }, [id]);
 
+  async function runDealerAssistant() {
+    try {
+      setAssistantLoading(true);
+
+      const res = await fetch(`/api/admin/cars/${id}/dealer-assistant`);
+      const data = await res.json();
+
+      setAssistant(data);
+    } catch (err) {
+      console.error("dealer assistant error:", err);
+      alert("Dealer Assistant failed");
+    } finally {
+      setAssistantLoading(false);
+    }
+  }
+
   async function save() {
     try {
       setSaving(true);
@@ -56,6 +75,10 @@ export default function EditCarPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...car,
+          marketing:
+            typeof car.marketing === "object" && car.marketing !== null
+              ? car.marketing
+              : {},
           images,
         }),
       });
@@ -131,10 +154,12 @@ export default function EditCarPage() {
   const copyPlatform = async (type: keyof Listings) => {
     try {
       const text = listings[type] || "";
+
       if (!text) {
         alert("Generate first");
         return;
       }
+
       await navigator.clipboard.writeText(text);
       alert(`${type} copied`);
     } catch (err) {
@@ -149,47 +174,55 @@ export default function EditCarPage() {
   const totalCost =
     (car.cost || 0) +
     (car.recon || 0) +
-    (car.marketing || 0) +
-    (car.docFee || 0);
+    (car.auctionFee || 0) +
+    (car.transportCost || 0) +
+    (car.registrationFee || 0) +
+    (car.smogFee || 0) +
+    (car.detailCost || 0) +
+    (car.docFee || 0) +
+    (car.salesTax || 0);
 
   const profit = (car.price || 0) - totalCost;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-        <div className="mb-4 flex gap-2">
-  <button
-    type="button"
-    onClick={() => router.push("/admin/dashboard")}
-    className="rounded-xl border px-4 py-2"
-  >
-    ← Dashboard
-  </button>
+          <div className="mb-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/admin/dashboard")}
+              className="rounded-xl border px-4 py-2"
+            >
+              ← Dashboard
+            </button>
 
-  <button
-    type="button"
-    onClick={() => router.push("/admin/parts")}
-    className="rounded-xl border px-4 py-2"
-  >
-    ← Parts
-  </button>
-</div>
+            <button
+              type="button"
+              onClick={() => router.push("/admin/parts")}
+              className="rounded-xl border px-4 py-2"
+            >
+              ← Parts
+            </button>
+          </div>
+
           <h1 className="text-3xl font-bold">Edit Vehicle</h1>
           <p className="text-sm text-gray-500">ID: {id}</p>
         </div>
 
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => router.push(`/inventory/${id}`)}
-            className="border px-4 py-2 rounded-xl"
+            className="rounded-xl border px-4 py-2"
           >
             View
           </button>
 
           <button
+            type="button"
             onClick={save}
-            className="bg-black text-white px-4 py-2 rounded-xl"
+            className="rounded-xl bg-black px-4 py-2 text-white"
           >
             {saving ? "Saving..." : "Save"}
           </button>
@@ -198,17 +231,19 @@ export default function EditCarPage() {
 
       <div className="mt-6 grid gap-3 md:grid-cols-4">
         <button
+          type="button"
           onClick={async () => {
             const res = await fetch(`/api/admin/cars/${id}/price-intel`);
             const data = await res.json();
             setCar({ ...car, price: data.pricing?.retailEstimate || car.price });
           }}
-          className="border p-3 rounded-xl"
+          className="rounded-xl border p-3"
         >
           💰 Price AI
         </button>
 
         <button
+          type="button"
           onClick={async () => {
             const res = await fetch(`/api/admin/cars/${id}/auto-listing`, {
               method: "POST",
@@ -220,12 +255,13 @@ export default function EditCarPage() {
               description: ai.description || car.description,
             });
           }}
-          className="border p-3 rounded-xl"
+          className="rounded-xl border p-3"
         >
           📝 Listing AI
         </button>
 
         <button
+          type="button"
           onClick={async () => {
             const res = await fetch(`/api/admin/cars/${id}/photo-pack`, {
               method: "POST",
@@ -233,58 +269,71 @@ export default function EditCarPage() {
             const data = await res.json();
             setImages(data.images || images);
           }}
-          className="border p-3 rounded-xl"
+          className="rounded-xl border p-3"
         >
           📸 Photo AI
         </button>
 
         <button
+          type="button"
           onClick={async () => {
             const res = await fetch(`/api/admin/cars/${id}/profit-intel`);
             const data = await res.json();
             alert(`Profit: $${data.profit}`);
           }}
-          className="border p-3 rounded-xl"
+          className="rounded-xl border p-3"
         >
           📊 Profit AI
         </button>
 
         <button
+          type="button"
           onClick={async () => {
             const res = await fetch(`/api/admin/cars/${id}/auction-ai`);
             const data = await res.json();
             alert(`BUY LIMIT: $${data.pricing?.buyLimit}`);
           }}
-          className="border p-3 rounded-xl"
+          className="rounded-xl border p-3"
         >
           🚗 Auction AI
         </button>
 
         <button
+          type="button"
+          onClick={runDealerAssistant}
+          className="rounded-xl border p-3"
+        >
+          🤖 Dealer Assistant
+        </button>
+
+        <button
+          type="button"
           onClick={async () => {
             await fetch(`/api/admin/cars/${id}/autopilot`, { method: "POST" });
             alert("Autopilot done");
           }}
-          className="border p-3 rounded-xl"
+          className="rounded-xl border p-3"
         >
           🚀 Autopilot
         </button>
       </div>
 
-      <div className="mt-6 border rounded-xl p-4">
-        <h2 className="font-bold mb-3">🚀 Multi Platform AI</h2>
+      <div className="mt-6 rounded-xl border p-4">
+        <h2 className="mb-3 font-bold">🚀 Multi Platform AI</h2>
 
-        <div className="flex gap-2 flex-wrap mb-4">
+        <div className="mb-4 flex flex-wrap gap-2">
           <button
+            type="button"
             onClick={generateListings}
-            className="border px-3 py-2 rounded"
+            className="rounded border px-3 py-2"
           >
             Generate All
           </button>
 
           <button
+            type="button"
             onClick={autopilotPost}
-            className="bg-black text-white px-4 py-2 rounded"
+            className="rounded bg-black px-4 py-2 text-white"
           >
             POST ALL
           </button>
@@ -293,135 +342,423 @@ export default function EditCarPage() {
         <div className="mb-4">
           <h3>📘 Facebook</h3>
           <button
+            type="button"
             onClick={() => copyPlatform("facebook")}
-            className="border px-3 py-1 rounded mt-1"
+            className="mt-1 rounded border px-3 py-1"
           >
             Copy
           </button>
           <textarea
             value={listings.facebook}
             readOnly
-            className="w-full mt-2 border rounded p-2 min-h-[120px]"
+            className="mt-2 min-h-[120px] w-full rounded border p-2"
           />
         </div>
 
         <div className="mb-4">
           <h3>🟢 Craigslist</h3>
           <button
+            type="button"
             onClick={() => copyPlatform("craigslist")}
-            className="border px-3 py-1 rounded mt-1"
+            className="mt-1 rounded border px-3 py-1"
           >
             Copy
           </button>
           <textarea
             value={listings.craigslist}
             readOnly
-            className="w-full mt-2 border rounded p-2 min-h-[120px]"
+            className="mt-2 min-h-[120px] w-full rounded border p-2"
           />
         </div>
 
         <div>
           <h3>🟠 OfferUp</h3>
           <button
+            type="button"
             onClick={() => copyPlatform("offerup")}
-            className="border px-3 py-1 rounded mt-1"
+            className="mt-1 rounded border px-3 py-1"
           >
             Copy
           </button>
           <textarea
             value={listings.offerup}
             readOnly
-            className="w-full mt-2 border rounded p-2 min-h-[120px]"
+            className="mt-2 min-h-[120px] w-full rounded border p-2"
           />
         </div>
       </div>
 
-      <div className="mt-8 border rounded-2xl p-6 bg-white">
-        <div className="grid md:grid-cols-2 gap-4">
+      <div className="mt-8 rounded-2xl border bg-white p-6">
+        <div className="grid gap-4 md:grid-cols-2">
           <input
             value={car.title || ""}
             onChange={(e) => setCar({ ...car, title: e.target.value })}
-            className="border p-3 rounded-xl"
+            className="rounded-xl border p-3"
             placeholder="Title"
           />
 
           <input
             value={car.vin || ""}
             readOnly
-            className="border p-3 rounded-xl bg-gray-100"
+            className="rounded-xl border bg-gray-100 p-3"
+            placeholder="VIN"
           />
+<select
+  value={car.titleStatus || "unknown"}
+  onChange={(e) =>
+    setCar({ ...car, titleStatus: e.target.value })
+  }
+  className="rounded-xl border p-3"
+>
+  <option value="unknown">Unknown Title</option>
+  <option value="clean">Clean Title</option>
+  <option value="salvage">Salvage Title</option>
+  <option value="rebuilt">Rebuilt Title</option>
+  <option value="parts_only">Parts Only</option>
+</select>
 
+<input
+  value={car.titleCode || ""}
+  onChange={(e) =>
+    setCar({ ...car, titleCode: e.target.value })
+  }
+  className="rounded-xl border p-3"
+  placeholder="Title Code (CA - Salvage Certificate)"
+/>
           <input
             value={car.price || 0}
-            onChange={(e) =>
-              setCar({ ...car, price: Number(e.target.value) })
-            }
-            className="border p-3 rounded-xl"
+            onChange={(e) => setCar({ ...car, price: Number(e.target.value) })}
+            className="rounded-xl border p-3"
+            placeholder="Price"
           />
 
           <input
             value={car.mileage || 0}
-            onChange={(e) =>
-              setCar({ ...car, mileage: Number(e.target.value) })
-            }
-            className="border p-3 rounded-xl"
+            onChange={(e) => setCar({ ...car, mileage: Number(e.target.value) })}
+            className="rounded-xl border p-3"
+            placeholder="Mileage"
           />
         </div>
+        <div className="mt-6 rounded-2xl border bg-gray-50 p-5">
+  <h2 className="mb-4 text-xl font-black">🏁 Auction Information</h2>
 
-        <div className="grid md:grid-cols-2 gap-4 mt-6">
+  <div className="grid gap-4 md:grid-cols-2">
+    <select
+      value={car.auctionHouse || ""}
+      onChange={(e) => setCar({ ...car, auctionHouse: e.target.value })}
+      className="rounded-xl border p-3"
+    >
+      <option value="">Auction House</option>
+      <option value="copart">Copart</option>
+      <option value="manheim">Manheim</option>
+      <option value="iaai">IAAI</option>
+    </select>
+
+    <input
+      value={car.lotNumber || ""}
+      onChange={(e) => setCar({ ...car, lotNumber: e.target.value })}
+      className="rounded-xl border p-3"
+      placeholder="Lot Number"
+    />
+
+    <select
+      value={car.titleStatus || "unknown"}
+      onChange={(e) => setCar({ ...car, titleStatus: e.target.value })}
+      className="rounded-xl border p-3"
+    >
+      <option value="unknown">Unknown Title</option>
+      <option value="clean">Clean Title</option>
+      <option value="salvage">Salvage Title</option>
+      <option value="rebuilt">Rebuilt Title</option>
+      <option value="parts_only">Parts Only</option>
+    </select>
+
+    <input
+      value={car.titleCode || ""}
+      onChange={(e) => setCar({ ...car, titleCode: e.target.value })}
+      className="rounded-xl border p-3"
+      placeholder="Title Code ex: CA - Salvage Certificate"
+    />
+
+    <input
+      value={car.primaryDamage || ""}
+      onChange={(e) => setCar({ ...car, primaryDamage: e.target.value })}
+      className="rounded-xl border p-3"
+      placeholder="Primary Damage ex: Front End"
+    />
+
+    <input
+      value={car.secondaryDamage || ""}
+      onChange={(e) => setCar({ ...car, secondaryDamage: e.target.value })}
+      className="rounded-xl border p-3"
+      placeholder="Secondary Damage ex: Side"
+    />
+
+    <input
+      value={car.odometerStatus || ""}
+      onChange={(e) => setCar({ ...car, odometerStatus: e.target.value })}
+      className="rounded-xl border p-3"
+      placeholder="Odometer Status ex: Actual"
+    />
+
+    <input
+      value={car.estimatedRetailValue || 0}
+      onChange={(e) =>
+        setCar({ ...car, estimatedRetailValue: Number(e.target.value) })
+      }
+      className="rounded-xl border p-3"
+      placeholder="Estimated Retail Value"
+    />
+
+    <input
+      value={car.saleDate || ""}
+      onChange={(e) => setCar({ ...car, saleDate: e.target.value })}
+      className="rounded-xl border p-3"
+      placeholder="Sale Date"
+    />
+
+    <input
+      value={car.location || ""}
+      onChange={(e) => setCar({ ...car, location: e.target.value })}
+      className="rounded-xl border p-3"
+      placeholder="Auction Location ex: CA - Sacramento"
+    />
+  </div>
+
+  <div className="mt-4 grid gap-3 md:grid-cols-3">
+    <label className="flex items-center gap-2 rounded-xl border bg-white p-3">
+      <input
+        type="checkbox"
+        checked={!!car.runAndDrive}
+        onChange={(e) => setCar({ ...car, runAndDrive: e.target.checked })}
+      />
+      Run & Drive
+    </label>
+
+    <label className="flex items-center gap-2 rounded-xl border bg-white p-3">
+      <input
+        type="checkbox"
+        checked={!!car.engineStarts}
+        onChange={(e) => setCar({ ...car, engineStarts: e.target.checked })}
+      />
+      Engine Starts
+    </label>
+
+    <label className="flex items-center gap-2 rounded-xl border bg-white p-3">
+      <input
+        type="checkbox"
+        checked={!!car.transmissionEngages}
+        onChange={(e) =>
+          setCar({ ...car, transmissionEngages: e.target.checked })
+        }
+      />
+      Transmission Engages
+    </label>
+  </div>
+</div>
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
           <input
             placeholder="Purchase Cost"
-            className="border p-2 rounded"
+            className="rounded border p-2"
             value={car.cost || 0}
             onChange={(e) => setCar({ ...car, cost: Number(e.target.value) })}
           />
+
           <input
             placeholder="Recon Cost"
-            className="border p-2 rounded"
+            className="rounded border p-2"
             value={car.recon || 0}
             onChange={(e) => setCar({ ...car, recon: Number(e.target.value) })}
           />
+
           <input
-            placeholder="Marketing"
-            className="border p-2 rounded"
-            value={car.marketing || 0}
+            placeholder="Auction Fee"
+            className="rounded border p-2"
+            value={car.auctionFee || 0}
             onChange={(e) =>
-              setCar({ ...car, marketing: Number(e.target.value) })
+              setCar({ ...car, auctionFee: Number(e.target.value) })
             }
           />
+
+          <input
+            placeholder="Transport Cost"
+            className="rounded border p-2"
+            value={car.transportCost || 0}
+            onChange={(e) =>
+              setCar({ ...car, transportCost: Number(e.target.value) })
+            }
+          />
+
+          <input
+            placeholder="Registration Fee"
+            className="rounded border p-2"
+            value={car.registrationFee || 0}
+            onChange={(e) =>
+              setCar({ ...car, registrationFee: Number(e.target.value) })
+            }
+          />
+
+          <input
+            placeholder="Smog Fee"
+            className="rounded border p-2"
+            value={car.smogFee || 0}
+            onChange={(e) =>
+              setCar({ ...car, smogFee: Number(e.target.value) })
+            }
+          />
+
+          <input
+            placeholder="Detail Cost"
+            className="rounded border p-2"
+            value={car.detailCost || 0}
+            onChange={(e) =>
+              setCar({ ...car, detailCost: Number(e.target.value) })
+            }
+          />
+
           <input
             placeholder="Doc Fee"
-            className="border p-2 rounded"
+            className="rounded border p-2"
             value={car.docFee || 0}
-            onChange={(e) =>
-              setCar({ ...car, docFee: Number(e.target.value) })
-            }
+            onChange={(e) => setCar({ ...car, docFee: Number(e.target.value) })}
+          />
+
+          <input
+            placeholder="Sales Tax"
+            className="rounded border p-2"
+            value={car.salesTax || 0}
+            onChange={(e) => setCar({ ...car, salesTax: Number(e.target.value) })}
           />
         </div>
 
-        <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-          <p>Estimated Profit</p>
-          <h2 className="text-green-600 text-xl font-bold">
+        <div className="mt-6 rounded-xl bg-gray-50 p-4">
+          <p>Total Investment</p>
+          <h2 className="text-xl font-bold text-gray-900">
+            ${totalCost.toLocaleString()}
+          </h2>
+
+          <p className="mt-3">Estimated Profit</p>
+          <h2 className="text-xl font-bold text-green-600">
             ${profit.toLocaleString()}
           </h2>
         </div>
+
+        <div className="mt-6 rounded-2xl border bg-black p-5 text-white">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black">🤖 AI Dealer Assistant</h2>
+
+            <button
+              type="button"
+              onClick={runDealerAssistant}
+              className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-black"
+            >
+              {assistantLoading ? "Thinking..." : "Run"}
+            </button>
+          </div>
+
+          {!assistant ? (
+            <p className="mt-4 text-sm text-gray-300">
+              Run assistant to get BUY / PASS recommendation.
+            </p>
+          ) : (
+            <div className="mt-5 space-y-4">
+              <div className="rounded-xl bg-white p-4 text-black">
+                <p className="text-sm text-gray-500">Recommendation</p>
+                <h3 className="text-3xl font-black">
+                  {assistant.recommendation === "BUY" ? "🟢 BUY" : "🔴 PASS"}
+                </h3>
+              </div>
+              <div className="rounded-xl bg-white/10 p-3">
+  <p className="text-xs text-gray-300">Title</p>
+  <h3 className="text-xl font-bold">
+    {assistant.titleStatus?.toUpperCase() || "UNKNOWN"}
+  </h3>
+  {assistant.titleCode && (
+    <p className="mt-1 text-xs text-gray-300">{assistant.titleCode}</p>
+  )}
+</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-xs text-gray-300">Confidence</p>
+                  <h3 className="text-xl font-bold">{assistant.confidence}%</h3>
+                </div>
+
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-xs text-gray-300">Max Bid</p>
+                  <h3 className="text-xl font-bold">
+                    ${assistant.maxBid?.toLocaleString()}
+                  </h3>
+                </div>
+
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-xs text-gray-300">Repair</p>
+                  <h3 className="text-xl font-bold">
+                    ${assistant.repairEstimate?.toLocaleString()}
+                  </h3>
+                </div>
+
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-xs text-gray-300">Shipping</p>
+                  <h3 className="text-xl font-bold">
+                    ${assistant.shippingEstimate?.toLocaleString()}
+                  </h3>
+                </div>
+
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-xs text-gray-300">Investment</p>
+                  <h3 className="text-xl font-bold">
+                    ${assistant.totalInvestment?.toLocaleString()}
+                  </h3>
+                </div>
+
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-xs text-gray-300">Profit</p>
+                  <h3 className="text-xl font-bold">
+                    ${assistant.expectedProfit?.toLocaleString()}
+                  </h3>
+                </div>
+
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-xs text-gray-300">ROI</p>
+                  <h3 className="text-xl font-bold">{assistant.roi}%</h3>
+                </div>
+
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-xs text-gray-300">Risk</p>
+                  <h3 className="text-xl font-bold">{assistant.risk}</h3>
+                </div>
+              </div>
+
+              {assistant.notes?.length > 0 && (
+                <div className="rounded-xl bg-white/10 p-4">
+                  <p className="mb-2 text-sm font-bold">Why?</p>
+                  <ul className="space-y-1 text-sm text-gray-200">
+                    {assistant.notes.map((note: string, i: number) => (
+                      <li key={i}>• {note}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         <input
-  value={car.videoUrl || ""}
-  onChange={(e) =>
-    setCar({ ...car, videoUrl: e.target.value })
-  }
-  placeholder="YouTube Video URL"
-  className="w-full border p-3 rounded-xl mt-4"
-/>
+          value={car.videoUrl || ""}
+          onChange={(e) => setCar({ ...car, videoUrl: e.target.value })}
+          placeholder="YouTube Video URL"
+          className="mt-4 w-full rounded-xl border p-3"
+        />
 
         <textarea
           value={car.description || ""}
           onChange={(e) => setCar({ ...car, description: e.target.value })}
-          className="w-full mt-6 border p-3 rounded-xl"
+          className="mt-6 w-full rounded-xl border p-3"
+          placeholder="Description"
         />
 
         <div className="mt-6">
-          <h2 className="font-bold mb-2">Photos</h2>
+          <h2 className="mb-2 font-bold">Photos</h2>
           <PhotoManager value={images} onChange={setImages} />
         </div>
 
@@ -429,9 +766,11 @@ export default function EditCarPage() {
           <CloudinaryUploader
             onUploaded={(files: Img[]) => {
               const next = [...images, ...files];
+
               if (next.length > 0 && !next.some((img) => img.isCover)) {
                 next[0].isCover = true;
               }
+
               setImages(next);
             }}
           />

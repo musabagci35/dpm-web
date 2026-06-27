@@ -9,6 +9,18 @@ const ImageSchema = new Schema(
   { _id: false }
 );
 
+const MarketingSchema = new Schema(
+  {
+    facebookPosted: { type: Boolean, default: false },
+    craigslistReady: { type: Boolean, default: false },
+    offerupReady: { type: Boolean, default: false },
+    marketplaceReady: { type: Boolean, default: false },
+    googleIndexed: { type: Boolean, default: false },
+    lastMarketingRunAt: { type: Date, default: null },
+  },
+  { _id: false }
+);
+
 const CarSchema = new Schema(
   {
     title: { type: String, trim: true },
@@ -29,8 +41,33 @@ const CarSchema = new Schema(
 
     price: { type: Number, required: true, index: true },
     mileage: { type: Number, default: 0, index: true },
-
-    vin: { type: String, trim: true, index: true },
+    vin: { type: String, trim: true, uppercase: true, sparse: true, index: true },
+    titleStatus: {
+      type: String,
+      enum: ["clean", "salvage", "rebuilt", "parts_only", "unknown"],
+      default: "unknown",
+      index: true,
+    },
+    
+    titleCode: { type: String, trim: true, default: "" },
+    auctionHouse: {
+      type: String,
+      enum: ["copart", "manheim", "iaai", ""],
+      default: "",
+      index: true,
+    },
+    
+    lotNumber: { type: String, trim: true, default: "" },
+    primaryDamage: { type: String, trim: true, default: "" },
+    secondaryDamage: { type: String, trim: true, default: "" },
+    odometerStatus: { type: String, trim: true, default: "" },
+    estimatedRetailValue: { type: Number, default: 0 },
+    saleDate: { type: String, trim: true, default: "" },
+    location: { type: String, trim: true, default: "" },
+    
+    runAndDrive: { type: Boolean, default: false },
+    engineStarts: { type: Boolean, default: false },
+    transmissionEngages: { type: Boolean, default: false },
 
     description: { type: String, trim: true, default: "" },
     videoUrl: { type: String, trim: true, default: "" },
@@ -47,44 +84,50 @@ const CarSchema = new Schema(
     isActive: { type: Boolean, default: true, index: true },
     isFeatured: { type: Boolean, default: false, index: true },
 
+    // VIN Intelligence
+    engine: { type: String, trim: true, default: "" },
+    transmission: { type: String, trim: true, default: "" },
+    drivetrain: { type: String, trim: true, default: "" },
+    fuelType: { type: String, trim: true, default: "" },
+    bodyClass: { type: String, trim: true, default: "" },
+
+    // Profit Calculator
     cost: { type: Number, default: 0 },
     recon: { type: Number, default: 0 },
-    marketing: {
-      facebookPosted: {
-        type: Boolean,
-        default: false,
-      },
-      craigslistReady: {
-        type: Boolean,
-        default: false,
-      },
-      offerupReady: {
-        type: Boolean,
-        default: false,
-      },
-      marketplaceReady: {
-        type: Boolean,
-        default: false,
-      },
-      googleIndexed: {
-        type: Boolean,
-        default: false,
-      },
-      lastMarketingRunAt: {
-        type: Date,
-        default: null,
-      },
-    },
+    auctionFee: { type: Number, default: 0 },
+    transportCost: { type: Number, default: 0 },
+    registrationFee: { type: Number, default: 0 },
+    smogFee: { type: Number, default: 0 },
+    detailCost: { type: Number, default: 0 },
     docFee: { type: Number, default: 0 },
+    salesTax: { type: Number, default: 0 },
+
+    expectedRetail: { type: Number, default: 0 },
+    totalInvestment: { type: Number, default: 0 },
+    expectedProfit: { type: Number, default: 0 },
+    roi: { type: Number, default: 0 },
+
+    // AI Dealer Assistant
+    buyLimit: { type: Number, default: 0 },
+    aiScore: { type: Number, default: 0 },
+    aiRecommendation: {
+      type: String,
+      enum: ["BUY", "PASS", "WATCH", ""],
+      default: "",
+    },
+    aiNotes: { type: String, trim: true, default: "" },
+
+    marketing: { type: MarketingSchema, default: () => ({}) },
   },
   { timestamps: true }
 );
 
 function makeSlug(doc: any) {
-  const base = `${doc.year || ""}-${doc.make || ""}-${doc.model || ""}-${doc.trim || ""}-${doc.vin || ""}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+  const base =
+    `${doc.year || ""}-${doc.make || ""}-${doc.model || ""}-${doc.trim || ""}-${doc.vin || ""}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
 
   return base || undefined;
 }

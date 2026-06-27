@@ -2,68 +2,47 @@ import mongoose, { Schema, models, model } from "mongoose";
 
 const AuctionVehicleSchema = new Schema(
   {
-    auction: {
-      type: String,
-      enum: ["copart", "manheim", "iaai", "adesa", "acv", "other"],
-      default: "copart",
-      index: true,
-    },
+    title: { type: String, required: true, trim: true },
+    vin: { type: String, trim: true, uppercase: true, index: true },
 
-    lotNumber: { type: String, trim: true, default: "", index: true },
-    vin: { type: String, trim: true, uppercase: true, default: "", index: true },
+    year: { type: Number, required: true },
+    make: { type: String, required: true, trim: true },
+    model: { type: String, required: true, trim: true },
+    trim: { type: String, default: "", trim: true },
 
-    year: { type: Number, default: 0, index: true },
-    make: { type: String, trim: true, default: "", index: true },
-    model: { type: String, trim: true, default: "", index: true },
-    trim: { type: String, trim: true, default: "" },
+    auctionName: { type: String, required: true, trim: true }, // Manheim, Copart, IAA, ACV
+    location: { type: String, default: "", trim: true },
+    lane: { type: String, default: "", trim: true },
+    runNumber: { type: String, default: "", trim: true },
+    saleDate: { type: Date },
 
-    titleStatus: { type: String, trim: true, default: "unknown" },
-    damageType: { type: String, trim: true, default: "" },
-    runAndDrive: { type: Boolean, default: false },
-    hasKeys: { type: Boolean, default: false },
+    mileage: { type: Number, default: 0 },
+    condition: { type: String, default: "", trim: true },
+    damage: { type: String, default: "", trim: true },
+    announcements: { type: String, default: "", trim: true },
 
-    auctionDate: { type: Date, default: null },
-    auctionUrl: { type: String, trim: true, default: "" },
-
+    mmr: { type: Number, default: 0 },
     currentBid: { type: Number, default: 0 },
-    buyNowPrice: { type: Number, default: 0 },
-    auctionFees: { type: Number, default: 0 },
-    transportCost: { type: Number, default: 0 },
-    repairEstimate: { type: Number, default: 0 },
-    otherCost: { type: Number, default: 0 },
-
-    targetRetailPrice: { type: Number, default: 0 },
     maxBid: { type: Number, default: 0 },
-    estimatedProfit: { type: Number, default: 0 },
-    totalCost: { type: Number, default: 0 },
+    retailPrice: { type: Number, default: 0 },
 
-    decision: {
+    auctionFee: { type: Number, default: 0 },
+    transportCost: { type: Number, default: 0 },
+    repairCost: { type: Number, default: 0 },
+    detailCost: { type: Number, default: 0 },
+    registrationCost: { type: Number, default: 0 },
+
+    images: [{ type: String }],
+    status: {
       type: String,
-      enum: ["watch", "bid", "pass", "purchased"],
-      default: "watch",
-      index: true,
+      enum: ["watching", "bidding", "purchased", "passed", "sold"],
+      default: "watching",
     },
 
-    notes: { type: String, default: "" },
-    images: { type: [String], default: [] },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
-AuctionVehicleSchema.pre("save", function () {
-  const bid = this.buyNowPrice || this.currentBid || 0;
-
-  this.totalCost =
-    bid +
-    (this.auctionFees || 0) +
-    (this.transportCost || 0) +
-    (this.repairEstimate || 0) +
-    (this.otherCost || 0);
-
-  this.estimatedProfit = (this.targetRetailPrice || 0) - this.totalCost;
-});
-
-const AuctionVehicle =
-  models.AuctionVehicle || model("AuctionVehicle", AuctionVehicleSchema);
-
-export default AuctionVehicle;
+export default models.AuctionVehicle ||
+  model("AuctionVehicle", AuctionVehicleSchema);

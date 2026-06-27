@@ -1,7 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { proThumb } from "@/lib/cloudinaryImage";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type Img = {
   url: string;
@@ -11,49 +24,102 @@ type Img = {
 
 type Props = {
   value: Img[];
-  onChange: (imgs: Img[]) => void;
+  onChange: (images: Img[]) => void;
 };
 
-export default function PhotoManager({ value, onChange }: Props) {
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
+function proThumb(url: string) {
+  return url.replace("/upload/", "/upload/c_fill,w_500,h_350,q_auto,f_auto/");
+}
 
-  async function handleUpload(files: FileList | null) {
-    if (!files || files.length === 0) return;
-  
-    const uploadedImages: Img[] = [];
-  
-    for (const file of Array.from(files)) {
-      const reader = new FileReader();
-  
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-  
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ file: base64 }),
-      });
-  
-      const result = await res.json();
-  
-      if (!res.ok || !result.success) {
-        alert(result.error || "Image upload failed");
-        continue;
-      }
-  
-      uploadedImages.push({
-        url: result.url,
-        publicId: result.publicId,
-        isCover: value.length === 0 && uploadedImages.length === 0,
-      });
+function SortablePhoto({
+  img,
+  index,
+  onCover,
+  onDelete,
+}: {
+  img: Img;
+  index: number;
+  onCover: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: img.url });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group relative overflow-hidden rounded-2xl border bg-white shadow-sm"
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing"
+      >
+        <img
+          src={proThumb(img.url)}
+          alt={`Vehicle photo ${index + 1}`}
+          className="h-36 w-full object-cover"
+        />
+      </div>
+
+      <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-1 text-xs font-bold text-white">
+        #{index + 1}
+      </div>
+
+      {img.isCover && (
+        <div className="absolute right-2 top-2 rounded-full bg-yellow-400 px-2 py-1 text-xs font-black text-black">
+          👑 Cover
+        </div>
+      )}
+
+      <div className="absolute inset-x-2 bottom-2 flex gap-2 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={onCover}
+          className="flex-1 rounded-xl bg-white px-3 py-2 text-xs font-bold shadow"
+        >
+          Set Cover
+        </button>
+
+        <button
+          type="button"
+          onClick={onDelete}
+          className="flex-1 rounded-xl bg-red-600 px-3 py-2 text-xs font-bold text-white shadow"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function PhotoManager({ value, onChange }: Props) {
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    })
+  );
+
+  function normalizeCover(images: Img[]) {
+    if (images.length === 0) return images;
+
+    const hasCover = images.some((img) => img.isCover);
+    if (!hasCover) {
+      return images.map((img, i) => ({
+        ...img,
+        isCover: i === 0,
+      }));
     }
-  
-    onChange([...value, ...uploadedImages]);
+
+    return images;
   }
 
   function setCover(index: number) {
@@ -67,85 +133,83 @@ export default function PhotoManager({ value, onChange }: Props) {
 
   function remove(index: number) {
     const updated = value.filter((_, i) => i !== index);
-
-    if (updated.length > 0 && !updated.some((img) => img.isCover)) {
-      updated[0].isCover = true;
-    }
-
-    onChange(updated);
+    onChange(normalizeCover(updated));
+    setDeleteIndex(null);
   }
 
-  function onDragStart(index: number) {
-    setDragIndex(index);
+  function handleDragEnd(event: any) {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = value.findIndex((img) => img.url === active.id);
+    const newIndex = value.findIndex((img) => img.url === over.id);
+
+    const updated = arrayMove(value, oldIndex, newIndex);
+    onChange(normalizeCover(updated));
   }
 
-  function onDrop(index: number) {
-    if (dragIndex === null) return;
-
-    const copy = [...value];
-    const dragged = copy[dragIndex];
-
-    copy.splice(dragIndex, 1);
-    copy.splice(index, 0, dragged);
-
-    setDragIndex(null);
-    onChange(copy);
+  if (!value || value.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed p-8 text-center text-gray-500">
+        No photos yet. Upload vehicle photos below.
+      </div>
+    );
   }
 
   return (
     <>
-      <div className="mb-3">
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={(e) => handleUpload(e.target.files)}
-          className="w-full border p-2 rounded"
-        />
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={value.map((img) => img.url)}
+          strategy={rectSortingStrategy}
+        >
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            {value.map((img, index) => (
+              <SortablePhoto
+                key={img.url}
+                img={img}
+                index={index}
+                onCover={() => setCover(index)}
+                onDelete={() => setDeleteIndex(index)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
-      <div className="grid grid-cols-3 gap-3">
-        {value.map((img, index) => (
-          <div
-            key={`${img.url}-${index}`}
-            draggable
-            onDragStart={() => onDragStart(index)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => onDrop(index)}
-            className="relative border rounded-xl overflow-hidden group"
-          >
-            <img
-              src={proThumb(img.url)}
-              alt={`Vehicle photo ${index + 1}`}
-              className="w-full h-32 object-cover"
-            />
+      {deleteIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-xl font-black">Delete photo?</h3>
+            <p className="mt-2 text-sm text-gray-500">
+              This photo will be removed from this vehicle gallery.
+            </p>
 
-            {img.isCover && (
-              <div className="absolute top-1 left-1 bg-black text-white text-xs px-2 py-1 rounded">
-                COVER
-              </div>
-            )}
-
-            <div className="absolute bottom-1 left-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+            <div className="mt-6 flex gap-3">
               <button
                 type="button"
-                onClick={() => setCover(index)}
-                className="flex-1 bg-white text-xs px-2 py-1 rounded"
+                onClick={() => setDeleteIndex(null)}
+                className="flex-1 rounded-xl border px-4 py-2"
               >
-                Cover
+                Cancel
               </button>
 
               <button
                 type="button"
-                onClick={() => remove(index)}
-                className="flex-1 bg-red-500 text-white text-xs px-2 py-1 rounded"
+                onClick={() => remove(deleteIndex)}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2 font-bold text-white"
               >
                 Delete
               </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </>
   );
 }
