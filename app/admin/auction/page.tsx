@@ -1,5 +1,5 @@
 import Link from "next/link";
-import dbConnect from "@/lib/dbConnect";
+import { connectDB } from "@/lib/mongodb";
 import AuctionVehicle from "@/models/AuctionVehicle";
 
 function money(n: number) {
@@ -7,7 +7,7 @@ function money(n: number) {
 }
 
 export default async function AuctionCenterAdminPage() {
-  await dbConnect();
+  await connectDB();
 
   const vehicles = await AuctionVehicle.find({})
     .sort({ createdAt: -1 })

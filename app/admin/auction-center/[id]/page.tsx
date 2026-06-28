@@ -89,7 +89,7 @@ export default async function AuctionVehicleDetailPage({
       redirect(`/admin/edit-car/${auctionCar.inventoryCarId}`);
     }
 
-    const existingCar = auctionCar.vin
+    const existingCar: any = auctionCar.vin
       ? await Car.findOne({ vin: auctionCar.vin }).lean()
       : null;
 
