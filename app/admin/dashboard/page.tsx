@@ -204,8 +204,14 @@ export default async function Dashboard() {
     Test customer vehicle offers
   </p>
 </Link>
-<Link href="/admin/auction-center">
-  Auction Center
+<Link
+  href="/admin/auction-center"
+  className="border border-slate-900 rounded-xl p-6 hover:bg-gray-50 transition"
+>
+  <h3 className="text-lg font-bold">🏁 Auction Center</h3>
+  <p className="text-sm text-gray-500 mt-2">
+    Import and manage auction vehicles
+  </p>
 </Link>
 
 </div>
