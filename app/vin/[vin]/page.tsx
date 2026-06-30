@@ -11,26 +11,6 @@ function numberOrZero(value: any) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function estimateMarketValue(year: number, make: string, model: string) {
-  const age = new Date().getFullYear() - year;
-
-  let base = 14000;
-
-  if (age > 12) base = 4500;
-  else if (age > 8) base = 8500;
-  else if (age > 4) base = 13500;
-
-  if (make.toLowerCase() === "toyota" || make.toLowerCase() === "honda") {
-    base += 1500;
-  }
-
-  if (model.toLowerCase().includes("prius")) {
-    base += 1000;
-  }
-
-  return Math.max(base, 2500);
-}
-
 export default async function VinPage({ params }: Props) {
   const { vin } = await params;
   const cleanVin = vin.trim().toUpperCase();
@@ -62,20 +42,17 @@ export default async function VinPage({ params }: Props) {
     String(year || "2020")
   )}&zoomType=fullscreen&angle=front`;
 
-  const marketValue = estimateMarketValue(year || 2016, make, model);
-  const suggestedPrice = Math.round(marketValue * 0.95);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-6xl px-4 py-10">
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border bg-white p-6">
+          <div className="h-[420px] rounded-2xl border bg-white p-6 flex items-center justify-center">
             <Image
               src={imageUrl}
               alt={`${year} ${make} ${model}`}
               width={1200}
               height={800}
-              className="h-auto w-full rounded-xl object-cover"
+              className="h-[360px] w-full rounded-xl object-contain"
             />
           </div>
 
@@ -98,21 +75,49 @@ export default async function VinPage({ params }: Props) {
             </div>
 
             <div className="rounded-2xl border bg-white p-5">
-              <div className="text-2xl font-bold">Market Intelligence</div>
+              <div className="text-2xl font-bold">Dealer Vehicle Report</div>
 
-              <div className="mt-4 text-4xl font-bold text-green-600">
-                ${marketValue.toLocaleString()}
-              </div>
-              <div className="mt-1 text-gray-600">
-                Estimated Market Value
+              <div className="mt-4 rounded-xl bg-red-50 p-4">
+                <div className="text-sm font-bold text-red-700">
+                  Dealer Price
+                </div>
+                <div className="mt-1 text-4xl font-black text-gray-900">
+                  Contact Dealer
+                </div>
+                <div className="mt-1 text-sm text-gray-600">
+                  Price depends on mileage, condition, options, smog, title, and
+                  documentation.
+                </div>
               </div>
 
-              <div className="mt-5 text-3xl font-semibold">
-                ${suggestedPrice.toLocaleString()}
+              <div className="mt-5 space-y-3 text-sm">
+                <div className="flex justify-between rounded-xl bg-gray-50 p-3">
+                  <strong>VIN Decode</strong>
+                  <span>Completed</span>
+                </div>
+
+                <div className="flex justify-between rounded-xl bg-gray-50 p-3">
+                  <strong>Dealer Review</strong>
+                  <span>Available</span>
+                </div>
+
+                <div className="flex justify-between rounded-xl bg-gray-50 p-3">
+                  <strong>Documents</strong>
+                  <span>Available upon request</span>
+                </div>
+
+                <div className="flex justify-between rounded-xl bg-gray-50 p-3">
+                  <strong>Status</strong>
+                  <span>Ready for buyer review</span>
+                </div>
               </div>
-              <div className="mt-1 text-gray-600">
-                Suggested Dealer List Price
-              </div>
+
+              <a
+                href="tel:+19162618880"
+                className="mt-5 block rounded-2xl bg-red-600 px-5 py-4 text-center font-black text-white hover:bg-red-700"
+              >
+                Call Drive Prime Motors
+              </a>
             </div>
           </div>
         </div>
