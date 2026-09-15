@@ -3,6 +3,7 @@ import { z } from "zod";
 import { connectDB } from "@/lib/mongodb";
 import Appointment from "@/models/Appointment";
 import Lead from "@/models/Lead";
+import { getAdminSession } from "@/lib/adminSession";
 
 const appointmentSchema = z.object({
   carId: z.string().optional(),
@@ -15,6 +16,12 @@ const appointmentSchema = z.object({
 });
 
 export async function GET() {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     await connectDB();
 

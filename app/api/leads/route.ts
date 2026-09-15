@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Lead from "@/models/Lead";
 import nodemailer from "nodemailer";
+import { getAdminSession } from "@/lib/adminSession";
 
 // 🔥 BASE URL
 const baseUrl =
@@ -127,6 +128,12 @@ async function autoReplySMS(lead: any) {
 
 // ✅ GET
 export async function GET() {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     await connectDB();
     const leads = await Lead.find().sort({ createdAt: -1 });
