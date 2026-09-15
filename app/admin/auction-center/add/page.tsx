@@ -59,7 +59,7 @@ async function createAuctionVehicle(formData: FormData) {
 
 export default function AddAuctionVehiclePage() {
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
+    <div>
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -81,6 +81,6 @@ export default function AddAuctionVehiclePage() {
 
         <AuctionVehicleForm action={createAuctionVehicle} />
       </div>
-    </main>
+    </div>
   );
 }

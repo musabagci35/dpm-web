@@ -1,7 +1,6 @@
 import "./globals.css";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
 import Providers from "@/components/Providers";
+import SiteChrome from "@/components/SiteChrome";
 
 export const metadata = {
   metadataBase: new URL("https://driveprimemotorsllc.com"),
@@ -60,9 +59,7 @@ export default function RootLayout({
     <html lang="en" data-scroll-behavior="smooth">
       <body className="min-h-screen flex flex-col bg-[#f8fafc] text-gray-900">
         <Providers>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <SiteChrome>{children}</SiteChrome>
         </Providers>
       </body>
     </html>

@@ -77,7 +77,7 @@ Plant: ${item?.PlantCountry || ""}`,
 
 export default function ImportAuctionPage() {
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
+    <div>
       <div className="mx-auto max-w-3xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -118,6 +118,6 @@ export default function ImportAuctionPage() {
           </div>
         </form>
       </div>
-    </main>
+    </div>
   );
 }

@@ -13,7 +13,7 @@ export default async function PartsPage() {
     .lean();
 
   return (
-    <main className="mx-auto max-w-7xl p-6">
+    <div className="mx-auto max-w-7xl p-6">
       <div className="mb-8">
         <h1 className="text-4xl font-bold">Used Auto Parts For Sale</h1>
         <p className="mt-2 text-gray-500">
@@ -95,6 +95,6 @@ export default async function PartsPage() {
           ))}
         </div>
       )}
-    </main>
+    </div>
   );
 }

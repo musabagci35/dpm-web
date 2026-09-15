@@ -38,6 +38,19 @@ function getCarImage(car: any) {
   return "/car.png";
 }
 
+function formatPrice(price?: number) {
+  const value = Number(price || 0);
+  if (!value || value <= 0) return "Call for Price";
+  return `$${value.toLocaleString()}`;
+}
+
+function getAvailabilityBadge(status?: string) {
+  if (status === "pending") {
+    return { label: "Pending Sale", className: "bg-amber-500 text-white" };
+  }
+  return { label: "Available", className: "bg-white text-gray-900" };
+}
+
 export default async function InventoryPage({ searchParams }: Props) {
   const params = (await searchParams) || {};
   let cars: any[] = [];
@@ -98,7 +111,7 @@ export default async function InventoryPage({ searchParams }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <section className="bg-gradient-to-br from-black via-zinc-900 to-red-950 py-16 text-white">
         <div className="mx-auto max-w-7xl px-6">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-red-300">
@@ -165,13 +178,13 @@ export default async function InventoryPage({ searchParams }: Props) {
         ) : (
           <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
             {cars.map((car: any) => {
-              const price = Number(car.price || 0);
               const title =
                 car.title ||
                 `${car.year} ${car.make} ${car.model} ${car.trim || ""}`.trim();
 
               const image = getCarImage(car);
               const vinLast = car.vin ? car.vin.slice(-6).toUpperCase() : null;
+              const availability = getAvailabilityBadge(car.status);
 
               return (
                 <Link
@@ -193,8 +206,10 @@ export default async function InventoryPage({ searchParams }: Props) {
                         </span>
                       )}
 
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-900 shadow">
-                        Available
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold shadow ${availability.className}`}
+                      >
+                        {availability.label}
                       </span>
                     </div>
                   </div>
@@ -225,8 +240,8 @@ export default async function InventoryPage({ searchParams }: Props) {
                         <p className="text-xs uppercase tracking-wide text-gray-400">
                           Internet Price
                         </p>
-                        <p className="text-2xl font-black text-green-600">
-                          ${price.toLocaleString()}
+                        <p className="text-2xl font-black text-red-600">
+                          {formatPrice(car.price)}
                         </p>
                       </div>
 
@@ -241,6 +256,6 @@ export default async function InventoryPage({ searchParams }: Props) {
           </div>
         )}
       </section>
-    </main>
+    </div>
   );
 }

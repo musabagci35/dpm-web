@@ -34,7 +34,7 @@ export default async function AuctionCenterPage() {
   const watchCount = vehicles.filter((car) => analyzeAuctionVehicle(car).decision === "WATCH").length;
 
   return (
-    <main className="min-h-screen bg-slate-950 p-6 text-white">
+    <div className="min-h-screen bg-slate-950 p-6 text-white">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
@@ -239,6 +239,6 @@ export default async function AuctionCenterPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }

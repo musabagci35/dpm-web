@@ -19,7 +19,7 @@ export default function MobileCTA({
         <div>
           <p className="text-xs text-gray-500">Price</p>
           <p className="text-lg font-extrabold text-red-600">
-            ${price.toLocaleString()}
+            {price > 0 ? `$${price.toLocaleString()}` : "Call for Price"}
           </p>
 
           {/* EXTRA TRUST */}

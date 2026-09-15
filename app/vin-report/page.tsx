@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function VinReportPage() {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <section className="relative overflow-hidden bg-gradient-to-br from-black via-zinc-900 to-red-950 px-6 py-24 text-white">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-red-600 blur-3xl" />
@@ -147,6 +147,6 @@ export default function VinReportPage() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

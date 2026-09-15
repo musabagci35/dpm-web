@@ -185,7 +185,7 @@ Body: ${vinData.body || "N/A"}`,
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {showVinPopup && vinData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
@@ -412,7 +412,7 @@ Body: ${vinData.body || "N/A"}`,
           </div>
         </aside>
       </section>
-    </main>
+    </div>
   );
 }
 

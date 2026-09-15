@@ -9,7 +9,6 @@ const navItems = [
   { href: "/parts", label: "Parts" },
   { href: "/financing", label: "Financing" },
   { href: "/sell-your-car", label: "Sell Your Car" },
-  { href: "/parts", label: "Parts" },
   { href: "/contact", label: "Contact" },
 ];
 

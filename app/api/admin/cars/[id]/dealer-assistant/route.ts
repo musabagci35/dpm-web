@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import Car from "@/models/Car";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 
 function money(n: any) {
   return Number(n || 0);

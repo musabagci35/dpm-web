@@ -21,12 +21,24 @@ function formatMileage(mileage?: number | null) {
   return `${Number(mileage).toLocaleString()} miles`;
 }
 
+function formatPrice(value: number) {
+  if (!value || value <= 0) return "Call for Price";
+  return `$${value.toLocaleString()}`;
+}
+
+function statusBadgeClass(status: string) {
+  if (status === "sold") return "bg-red-600 text-white";
+  if (status === "pending") return "bg-amber-100 text-amber-700";
+  return "bg-green-100 text-green-700";
+}
+
 function buildSchema(
   car: any,
   id: string,
   title: string,
   price: number,
-  image: string
+  image: string,
+  isSold: boolean
 ) {
   return {
     "@context": "https://schema.org",
@@ -41,7 +53,9 @@ function buildSchema(
       "@type": "Offer",
       price,
       priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
+      availability: isSold
+        ? "https://schema.org/SoldOut"
+        : "https://schema.org/InStock",
       url: `https://www.driveprimemotorsllc.com/inventory/${id}`,
     },
   };
@@ -62,11 +76,9 @@ export default async function VehicleDetailPage({
 
   if (!carRaw) return notFound();
 
-  if (
-    carRaw.status === "archived" ||
-    carRaw.status === "sold" ||
-    carRaw.isActive === false
-  ) {
+  const isSold = carRaw.status === "sold";
+
+  if (carRaw.status === "archived" || (carRaw.isActive === false && !isSold)) {
     return notFound();
   }
 
@@ -94,12 +106,17 @@ export default async function VehicleDetailPage({
 
   const mainImage = images[0]?.url || "/car-placeholder.jpg";
 
+  const coverImageUrl =
+    car.images?.find((img: any) => img.isCover)?.url || car.images?.[0]?.url;
+  const videoPoster = coverImageUrl ? proImage(coverImageUrl) : mainImage;
+
   const schema = buildSchema(
     car,
     car.slug || car._id,
     title,
     salePrice,
-    mainImage
+    mainImage,
+    isSold
   );
 
   return (
@@ -115,7 +132,7 @@ export default async function VehicleDetailPage({
         Quality Pre-Owned Vehicles • Easy Financing • Sacramento Area Dealer
       </section>
 
-      <main className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 py-8">
           <div className="mb-5 text-sm text-gray-500">
             <Link href="/" className="hover:text-red-600">
@@ -131,13 +148,23 @@ export default async function VehicleDetailPage({
           <div className="grid gap-8 lg:grid-cols-[1fr_410px]">
             <section className="overflow-hidden rounded-3xl border bg-white shadow-sm">
               <div className="relative">
-                {car.isFeatured && (
-                  <div className="absolute left-4 top-4 z-10 rounded-full bg-red-700 px-4 py-2 text-xs font-black uppercase text-white shadow">
-                    Featured Vehicle
+                {isSold ? (
+                  <div className="absolute left-4 top-4 z-10 rounded-full bg-black px-4 py-2 text-xs font-black uppercase text-white shadow">
+                    Sold
                   </div>
+                ) : (
+                  car.isFeatured && (
+                    <div className="absolute left-4 top-4 z-10 rounded-full bg-red-700 px-4 py-2 text-xs font-black uppercase text-white shadow">
+                      Featured Vehicle
+                    </div>
+                  )
                 )}
 
-                <Gallery images={images} />
+                <Gallery
+                  images={images}
+                  videoUrl={car.videoUrl}
+                  videoPoster={videoPoster}
+                />
               </div>
 
               <div className="border-t p-6">
@@ -154,7 +181,11 @@ export default async function VehicleDetailPage({
                       <span className="rounded-full bg-gray-100 px-3 py-2 font-semibold">
                         VIN: {maskVin(car.vin)}
                       </span>
-                      <span className="rounded-full bg-green-100 px-3 py-2 font-black text-green-700">
+                      <span
+                        className={`rounded-full px-3 py-2 font-black ${statusBadgeClass(
+                          car.status || "available"
+                        )}`}
+                      >
                         {(car.status || "available").toUpperCase()}
                       </span>
                     </div>
@@ -165,7 +196,7 @@ export default async function VehicleDetailPage({
                       Internet Price
                     </p>
                     <p className="text-3xl font-black text-green-700">
-                      ${salePrice.toLocaleString()}
+                      {formatPrice(salePrice)}
                     </p>
                     {monthly > 0 && (
                       <p className="text-sm font-semibold text-green-800">
@@ -177,23 +208,41 @@ export default async function VehicleDetailPage({
               </div>
 
               <div className="border-t bg-white p-6">
-                <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 p-5 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-black text-gray-900">
-                      This vehicle is available now.
-                    </p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Call before visiting to confirm availability and schedule a test drive.
-                    </p>
-                  </div>
+                {isSold ? (
+                  <div className="flex flex-col gap-4 rounded-2xl bg-gray-900 p-5 text-white sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-black">This vehicle has been sold.</p>
+                      <p className="mt-1 text-sm text-white/70">
+                        Browse our current inventory to find similar vehicles.
+                      </p>
+                    </div>
 
-                  <a
-                    href="tel:+19162618880"
-                    className="rounded-xl bg-red-700 px-5 py-3 text-center text-sm font-black text-white hover:bg-red-800"
-                  >
-                    Call (916) 261-8880
-                  </a>
-                </div>
+                    <Link
+                      href="/inventory"
+                      className="rounded-xl bg-red-600 px-5 py-3 text-center text-sm font-black text-white hover:bg-red-700"
+                    >
+                      Browse Inventory
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-black text-gray-900">
+                        This vehicle is available now.
+                      </p>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Call before visiting to confirm availability and schedule a test drive.
+                      </p>
+                    </div>
+
+                    <a
+                      href="tel:+19162618880"
+                      className="rounded-xl bg-red-700 px-5 py-3 text-center text-sm font-black text-white hover:bg-red-800"
+                    >
+                      Call (916) 261-8880
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div className="border-t p-6">
@@ -213,22 +262,6 @@ export default async function VehicleDetailPage({
                   />
                 </div>
 
-                {car.videoUrl && (
-                  <div className="mt-8">
-                    <h3 className="mb-3 text-xl font-black">Vehicle Video</h3>
-
-                    <div className="aspect-video overflow-hidden rounded-2xl">
-                      <iframe
-                        src={car.videoUrl
-                          .replace("watch?v=", "embed/")
-                          .replace("youtu.be/", "youtube.com/embed/")}
-                        className="h-full w-full"
-                        allowFullScreen
-                      />
-                    </div>
-                  </div>
-                )}
-
                 {car.description && (
                   <div className="mt-8">
                     <h3 className="mb-3 text-xl font-black">Description</h3>
@@ -243,10 +276,17 @@ export default async function VehicleDetailPage({
                     title="Dealer Inspected"
                     text="Reviewed before being listed for sale."
                   />
-                  <TrustCard
-                    title="Financing Available"
-                    text="Apply online and move forward faster."
-                  />
+                  {isSold ? (
+                    <TrustCard
+                      title="Similar Vehicles"
+                      text="Browse our current inventory for comparable options."
+                    />
+                  ) : (
+                    <TrustCard
+                      title="Financing Available"
+                      text="Apply online and move forward faster."
+                    />
+                  )}
                   <TrustCard
                     title="Trade-Ins Welcome"
                     text="Sell or trade your current vehicle."
@@ -273,13 +313,19 @@ export default async function VehicleDetailPage({
             </section>
 
             <aside className="h-fit rounded-3xl border bg-white p-6 shadow-sm lg:sticky lg:top-28">
-              <div className="mb-4 rounded-xl bg-green-100 px-4 py-3 text-center text-sm font-black text-green-700">
-                ✓ Available Today • Call Before Visiting
-              </div>
+              {isSold ? (
+                <div className="mb-4 rounded-xl bg-gray-900 px-4 py-3 text-center text-sm font-black text-white">
+                  ✕ This Vehicle Has Sold
+                </div>
+              ) : (
+                <div className="mb-4 rounded-xl bg-green-100 px-4 py-3 text-center text-sm font-black text-green-700">
+                  ✓ Available Today • Call Before Visiting
+                </div>
+              )}
 
               <p className="text-sm font-semibold text-gray-500">Internet Price</p>
               <div className="mt-1 text-4xl font-black text-gray-900">
-                ${salePrice.toLocaleString()}
+                {formatPrice(salePrice)}
               </div>
 
               {monthly > 0 && (
@@ -296,49 +342,71 @@ export default async function VehicleDetailPage({
                 </div>
               )}
 
-              <div className="mt-5 space-y-2 text-sm">
-                <PriceRow label="Vehicle price" value={price} />
-                {docFee > 0 && (
-                  <PriceRow label="Dealer documentation fee" value={docFee} />
-                )}
-                <div className="border-t pt-2">
-                  <PriceRow label="Listed price" value={salePrice} bold />
+              {price > 0 && (
+                <div className="mt-5 space-y-2 text-sm">
+                  <PriceRow label="Vehicle price" value={price} />
+                  {docFee > 0 && (
+                    <PriceRow label="Dealer documentation fee" value={docFee} />
+                  )}
+                  <div className="border-t pt-2">
+                    <PriceRow label="Listed price" value={salePrice} bold />
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="mt-5 rounded-2xl bg-blue-50 p-4">
-                <h3 className="font-black text-blue-950">Financing Available</h3>
-                <p className="mt-1 text-sm text-blue-800">
-                  Bad Credit? No Credit? First-Time Buyer? Apply online today.
-                </p>
-              </div>
+              {!isSold && (
+                <div className="mt-5 rounded-2xl bg-blue-50 p-4">
+                  <h3 className="font-black text-blue-950">Financing Available</h3>
+                  <p className="mt-1 text-sm text-blue-800">
+                    Bad Credit? No Credit? First-Time Buyer? Apply online today.
+                  </p>
+                </div>
+              )}
 
               <div className="mt-5 rounded-2xl border p-4 text-sm font-semibold text-gray-700">
                 📍 Drive Prime Motors LLC — Sacramento / Rancho Cordova Area
               </div>
 
-              <div className="mt-5 space-y-3">
-                <a
-                  href="tel:+19162618880"
-                  className="block rounded-2xl bg-red-700 py-4 text-center font-black text-white hover:bg-red-800"
-                >
-                  Confirm Availability
-                </a>
+              {isSold ? (
+                <div className="mt-5 space-y-3">
+                  <Link
+                    href="/inventory"
+                    className="block rounded-2xl bg-red-700 py-4 text-center font-black text-white hover:bg-red-800"
+                  >
+                    Browse Similar Vehicles
+                  </Link>
 
-                <Link
-                  href="/financing"
-                  className="block rounded-2xl border py-4 text-center font-black hover:bg-gray-50"
-                >
-                  Get Approved
-                </Link>
+                  <a
+                    href="tel:+19162618880"
+                    className="block rounded-2xl border py-4 text-center font-black hover:bg-gray-50"
+                  >
+                    Call (916) 261-8880
+                  </a>
+                </div>
+              ) : (
+                <div className="mt-5 space-y-3">
+                  <a
+                    href="tel:+19162618880"
+                    className="block rounded-2xl bg-red-700 py-4 text-center font-black text-white hover:bg-red-800"
+                  >
+                    Confirm Availability
+                  </a>
 
-                <a
-                  href="#schedule"
-                  className="block rounded-2xl border py-4 text-center font-black hover:bg-gray-50"
-                >
-                  Schedule Test Drive
-                </a>
-              </div>
+                  <Link
+                    href="/financing"
+                    className="block rounded-2xl border py-4 text-center font-black hover:bg-gray-50"
+                  >
+                    Get Approved
+                  </Link>
+
+                  <a
+                    href="#schedule"
+                    className="block rounded-2xl border py-4 text-center font-black hover:bg-gray-50"
+                  >
+                    Schedule Test Drive
+                  </a>
+                </div>
+              )}
 
               <div className="mt-5 rounded-2xl bg-red-700 p-5 text-white">
                 <div className="text-lg font-black">What’s your car worth?</div>
@@ -353,19 +421,23 @@ export default async function VehicleDetailPage({
                 </Link>
               </div>
 
-              <div id="questions" className="mt-6">
-                <DetailLeadForm carTitle={title} />
-              </div>
+              {!isSold && (
+                <>
+                  <div id="questions" className="mt-6">
+                    <DetailLeadForm carTitle={title} />
+                  </div>
 
-              <div id="schedule" className="mt-6">
-                <AppointmentForm carId={car._id} carTitle={title} />
-              </div>
+                  <div id="schedule" className="mt-6">
+                    <AppointmentForm carId={car._id} carTitle={title} />
+                  </div>
+                </>
+              )}
             </aside>
           </div>
         </div>
 
-        <MobileCTA price={salePrice} />
-      </main>
+        {!isSold && <MobileCTA price={salePrice} />}
+      </div>
     </>
   );
 }

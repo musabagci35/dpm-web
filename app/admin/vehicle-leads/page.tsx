@@ -1,12 +1,17 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import Link from "next/link";
 import DeleteVehicleLeadButton from "@/components/admin/DeleteVehicleLeadButton";
 import { proThumb } from "@/lib/cloudinaryImage";
 import CreateCarFromLeadButton from "@/components/admin/CreateCarFromLeadButton";
 import { connectDB } from "@/lib/mongodb";
 import VehicleLead from "@/models/VehicleLead";
+
+function statusClass(status: string) {
+  if (status === "converted") return "bg-green-100 text-green-700";
+  if (status === "new") return "bg-amber-100 text-amber-700";
+  return "bg-gray-100 text-gray-700";
+}
 
 export default async function VehicleLeadsPage() {
   await connectDB();
@@ -16,35 +21,33 @@ export default async function VehicleLeadsPage() {
     .lean();
 
   return (
-    <main className="min-h-screen bg-gray-50 p-10">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Vehicle Leads</h1>
-          <p className="mt-1 text-gray-500">
-            Sell Your Car submissions from customers
-          </p>
-        </div>
-
-        <Link
-          href="/admin/dashboard"
-          className="rounded-xl bg-black px-4 py-2 text-white"
-        >
-          Back to Dashboard
-        </Link>
+    <div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-black text-gray-900">Sell / Trade Leads</h1>
+        <p className="mt-1 text-gray-500">
+          Sell Your Car submissions from customers
+        </p>
       </div>
 
       <div className="grid gap-6">
         {leads.length === 0 && (
-          <div className="rounded-xl border bg-white p-6 text-gray-500">
+          <div className="rounded-2xl border bg-white p-12 text-center text-gray-500 shadow-sm">
             No vehicle leads yet.
           </div>
         )}
 
         {leads.map((lead: any) => (
-          <div key={String(lead._id)} className="rounded-xl border bg-white p-6">
-            <div className="mb-4 flex items-start justify-between gap-4">
+          <div key={String(lead._id)} className="rounded-2xl border bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold">
+                <span
+                  className={`mb-2 inline-flex rounded-full px-2.5 py-1 text-xs font-black uppercase ${statusClass(
+                    lead.status || "new"
+                  )}`}
+                >
+                  {lead.status || "new"}
+                </span>
+                <h2 className="text-xl font-bold text-gray-900">
                   {lead.year} {lead.make} {lead.model}
                 </h2>
                 <p className="text-sm text-gray-500">
@@ -54,15 +57,13 @@ export default async function VehicleLeadsPage() {
                 </p>
               </div>
 
-              <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">
-                {lead.status || "new"}
-              </span>
-              {lead.status !== "converted" && (
-  <CreateCarFromLeadButton leadId={String(lead._id)} />
-  
-)}
+              <div className="flex flex-wrap gap-2">
+                {lead.status !== "converted" && (
+                  <CreateCarFromLeadButton leadId={String(lead._id)} />
+                )}
+                <DeleteVehicleLeadButton leadId={String(lead._id)} />
+              </div>
             </div>
-            <DeleteVehicleLeadButton leadId={String(lead._id)} />
 
             <div className="grid gap-3 md:grid-cols-3">
               <Info label="Name" value={lead.name} />
@@ -101,7 +102,7 @@ export default async function VehicleLeadsPage() {
           </div>
         ))}
       </div>
-    </main>
+    </div>
   );
 }
 

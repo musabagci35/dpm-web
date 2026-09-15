@@ -24,7 +24,7 @@ export default async function PartDetailPage({
   }
 
   return (
-    <main className="mx-auto max-w-6xl p-6">
+    <div className="mx-auto max-w-6xl p-6">
       <Link
         href="/parts"
         className="mb-6 inline-block text-sm font-semibold text-gray-600 hover:underline"
@@ -156,6 +156,6 @@ export default async function PartDetailPage({
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

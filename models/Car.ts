@@ -12,8 +12,15 @@ const ImageSchema = new Schema(
 const MarketingSchema = new Schema(
   {
     facebookPosted: { type: Boolean, default: false },
+    facebookLastPublishedAt: { type: Date, default: null },
+    facebookLastError: { type: String, trim: true, default: "" },
+
     craigslistReady: { type: Boolean, default: false },
+    craigslistLastCopiedAt: { type: Date, default: null },
+
     offerupReady: { type: Boolean, default: false },
+    offerupLastCopiedAt: { type: Date, default: null },
+
     marketplaceReady: { type: Boolean, default: false },
     googleIndexed: { type: Boolean, default: false },
     lastMarketingRunAt: { type: Date, default: null },

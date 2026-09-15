@@ -10,7 +10,7 @@ await connectDB()
 
 const body = await req.json()
 
-const car:any = await Car.findById(body.carId).lean()
+const car:any = await Car.findById(body.carId)
 
 if(!car){
 return NextResponse.json({error:"Car not found"}, {status:404})
@@ -39,7 +39,7 @@ Drive Prime Motors
 Sacramento CA
 
 View vehicle:
-https://driveprimemotorsllc.com/inventory/${car._id}
+https://driveprimemotorsllc.com/inventory/${car.slug || car._id}
 `
 
 const image =
@@ -62,7 +62,28 @@ access_token:token
 
 const data = await fbRes.json()
 
-return NextResponse.json(data)
+if (!fbRes.ok || data?.error) {
+  car.marketing = {
+    ...(car.marketing?.toObject ? car.marketing.toObject() : car.marketing || {}),
+    facebookLastError: data?.error?.message || "Facebook post failed",
+  }
+  await car.save()
+
+  return NextResponse.json(
+    { error: data?.error?.message || "Facebook post failed", details: data },
+    { status: 502 }
+  )
+}
+
+car.marketing = {
+  ...(car.marketing?.toObject ? car.marketing.toObject() : car.marketing || {}),
+  facebookPosted: true,
+  facebookLastPublishedAt: new Date(),
+  facebookLastError: "",
+}
+await car.save()
+
+return NextResponse.json({ success: true, ...data })
 
 }catch(err:any){
 

@@ -32,25 +32,28 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   if ("price" in body) update.price = Number(body.price || 0);
   if ("mileage" in body) update.mileage = Number(body.mileage || 0);
   if ("description" in body) update.description = body.description || "";
+  if ("videoUrl" in body) update.videoUrl = body.videoUrl || "";
   if ("isActive" in body) update.isActive = body.isActive;
   if ("status" in body) update.status = body.status;
+  if ("isFeatured" in body) update.isFeatured = Boolean(body.isFeatured);
   if ("images" in body) update.images = body.images;
   if ("cost" in body) update.cost = Number(body.cost || 0);
   if ("recon" in body) update.recon = Number(body.recon || 0);
-  if ("marketing" in body) update.marketing = Number(body.marketing || 0);
   if ("docFee" in body) update.docFee = Number(body.docFee || 0);
+
+  if (
+    "marketing" in body &&
+    body.marketing &&
+    typeof body.marketing === "object" &&
+    !Array.isArray(body.marketing)
+  ) {
+    update.marketing = body.marketing;
+  }
 
   if (update.status === "sold" || update.status === "archived") {
     update.isActive = false;
-  }
-
-  if (
-    update.marketing === undefined ||
-    update.marketing === null ||
-    typeof update.marketing !== "object" ||
-    Number.isNaN(update.marketing)
-  ) {
-    delete update.marketing;
+  } else if (update.status === "available" || update.status === "pending") {
+    update.isActive = true;
   }
 
   const updated = await Car.findByIdAndUpdate(id, update, {

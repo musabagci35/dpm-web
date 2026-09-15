@@ -1,3 +1,11 @@
+// DEPRECATED: this file connects to a "dpm" database that is separate from
+// the real dealership data, which lives in "driveprimemotors" (see
+// lib/mongodb.ts, used everywhere else in the app). It was previously wired
+// into lib/auth.ts and the dealer-assistant API route, causing those features
+// to query an empty/wrong database. Both call sites have been switched to
+// lib/mongodb.ts. Do not import connectDB from this file for new code — use
+// lib/mongodb.ts instead. Left in place (unused) rather than deleted so this
+// history isn't lost; safe to remove once confirmed nothing else needs it.
 import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 

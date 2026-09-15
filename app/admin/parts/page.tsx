@@ -15,10 +15,10 @@ export default async function AdminPartsPage() {
   const safeParts = JSON.parse(JSON.stringify(parts));
 
   return (
-    <main className="min-h-screen bg-gray-50 p-10">
-      <div className="mb-8 flex items-center justify-between">
+    <div>
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Manage Parts</h1>
+          <h1 className="text-3xl font-black text-gray-900">Parts</h1>
           <p className="mt-1 text-gray-500">
             Manage auto parts inventory, prices, stock, and status
           </p>
@@ -26,13 +26,13 @@ export default async function AdminPartsPage() {
 
         <Link
           href="/admin/add-part"
-          className="rounded-xl bg-black px-5 py-3 text-sm font-bold text-white"
+          className="inline-flex items-center justify-center rounded-xl bg-black px-5 py-3 text-sm font-bold text-white hover:bg-zinc-800"
         >
           + Add Part
         </Link>
       </div>
 
       <AdminPartsClient parts={safeParts} />
-    </main>
+    </div>
   );
 }

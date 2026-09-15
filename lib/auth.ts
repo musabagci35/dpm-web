@@ -1,5 +1,5 @@
 import AuditLog from "@/models/AuditLog";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 
 export async function writeAuditLog({
   actorEmail,

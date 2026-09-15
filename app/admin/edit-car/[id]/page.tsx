@@ -2,19 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import CloudinaryUploader from "@/components/CloudinaryUploader";
 import PhotoManager from "@/components/PhotoManager";
+import VehicleVideoField from "@/components/admin/VehicleVideoField";
 
 type Img = {
   url: string;
   publicId?: string;
   isCover?: boolean;
-};
-
-type Listings = {
-  facebook: string;
-  craigslist: string;
-  offerup: string;
 };
 
 export default function EditCarPage() {
@@ -28,12 +22,6 @@ export default function EditCarPage() {
   const [images, setImages] = useState<Img[]>([]);
   const [assistant, setAssistant] = useState<any>(null);
   const [assistantLoading, setAssistantLoading] = useState(false);
-
-  const [listings, setListings] = useState<Listings>({
-    facebook: "",
-    craigslist: "",
-    offerup: "",
-  });
 
   useEffect(() => {
     (async () => {
@@ -93,81 +81,6 @@ export default function EditCarPage() {
     }
   }
 
-  const generateListings = async () => {
-    try {
-      const res = await fetch("/api/listing-ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ car }),
-      });
-
-      const data = await res.json();
-
-      setListings({
-        facebook: data.facebook || "",
-        craigslist: data.craigslist || "",
-        offerup: data.offerup || "",
-      });
-    } catch (err) {
-      console.error("generateListings error:", err);
-      alert("Generate failed");
-    }
-  };
-
-  const autopilotPost = async () => {
-    try {
-      const res = await fetch("/api/listing-ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ car }),
-      });
-
-      const data = await res.json();
-
-      const nextListings = {
-        facebook: data.facebook || "",
-        craigslist: data.craigslist || "",
-        offerup: data.offerup || "",
-      };
-
-      setListings(nextListings);
-
-      if (nextListings.facebook) {
-        await navigator.clipboard.writeText(nextListings.facebook);
-      }
-
-      window.open("https://www.facebook.com/marketplace/create/item", "_blank");
-      window.open("https://post.craigslist.org/", "_blank");
-      window.open("https://offerup.com/post", "_blank");
-
-      alert("POST ALL ready. Facebook text copied.");
-    } catch (err) {
-      console.error("autopilotPost error:", err);
-      alert("POST ALL failed");
-    }
-  };
-
-  const copyPlatform = async (type: keyof Listings) => {
-    try {
-      const text = listings[type] || "";
-
-      if (!text) {
-        alert("Generate first");
-        return;
-      }
-
-      await navigator.clipboard.writeText(text);
-      alert(`${type} copied`);
-    } catch (err) {
-      console.error("copy error:", err);
-      alert("Copy failed");
-    }
-  };
-
   if (loading) return <div className="p-10">Loading...</div>;
   if (!car) return <div className="p-10">Car not found.</div>;
 
@@ -186,47 +99,68 @@ export default function EditCarPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="mb-4 flex gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/admin/dashboard")}
-              className="rounded-xl border px-4 py-2"
-            >
-              ← Dashboard
-            </button>
-
-            <button
-              type="button"
-              onClick={() => router.push("/admin/parts")}
-              className="rounded-xl border px-4 py-2"
-            >
-              ← Parts
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/admin/inventory")}
+            className="mb-3 rounded-xl border px-4 py-2 text-sm font-semibold"
+          >
+            ← Back to Inventory
+          </button>
 
           <h1 className="text-3xl font-bold">Edit Vehicle</h1>
-          <p className="text-sm text-gray-500">ID: {id}</p>
+          <p className="text-sm text-gray-500">
+            {car.year} {car.make} {car.model}
+          </p>
         </div>
 
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => router.push(`/inventory/${id}`)}
-            className="rounded-xl border px-4 py-2"
+            className="rounded-xl border px-4 py-3 font-semibold"
           >
-            View
+            View Live
           </button>
 
           <button
             type="button"
             onClick={save}
-            className="rounded-xl bg-black px-4 py-2 text-white"
+            disabled={saving}
+            className="rounded-xl bg-black px-6 py-3 font-bold text-white disabled:opacity-60"
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 rounded-2xl border bg-white p-5 shadow-sm sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-2 block text-sm font-bold text-gray-700">
+            Vehicle Status
+          </span>
+          <select
+            value={car.status || "available"}
+            onChange={(e) => setCar({ ...car, status: e.target.value })}
+            className="w-full rounded-xl border p-3 font-semibold"
+          >
+            <option value="available">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+            <option value="archived">Archived</option>
+          </select>
+        </label>
+
+        <label className="flex items-center gap-3 rounded-xl border p-3 font-semibold">
+          <input
+            type="checkbox"
+            checked={!!car.isFeatured}
+            onChange={(e) => setCar({ ...car, isFeatured: e.target.checked })}
+            className="h-5 w-5"
+          />
+          Featured Vehicle
+        </label>
       </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-4">
@@ -318,74 +252,22 @@ export default function EditCarPage() {
         </button>
       </div>
 
-      <div className="mt-6 rounded-xl border p-4">
-        <h2 className="mb-3 font-bold">🚀 Multi Platform AI</h2>
-
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={generateListings}
-            className="rounded border px-3 py-2"
-          >
-            Generate All
-          </button>
-
-          <button
-            type="button"
-            onClick={autopilotPost}
-            className="rounded bg-black px-4 py-2 text-white"
-          >
-            POST ALL
-          </button>
-        </div>
-
-        <div className="mb-4">
-          <h3>📘 Facebook</h3>
-          <button
-            type="button"
-            onClick={() => copyPlatform("facebook")}
-            className="mt-1 rounded border px-3 py-1"
-          >
-            Copy
-          </button>
-          <textarea
-            value={listings.facebook}
-            readOnly
-            className="mt-2 min-h-[120px] w-full rounded border p-2"
-          />
-        </div>
-
-        <div className="mb-4">
-          <h3>🟢 Craigslist</h3>
-          <button
-            type="button"
-            onClick={() => copyPlatform("craigslist")}
-            className="mt-1 rounded border px-3 py-1"
-          >
-            Copy
-          </button>
-          <textarea
-            value={listings.craigslist}
-            readOnly
-            className="mt-2 min-h-[120px] w-full rounded border p-2"
-          />
-        </div>
-
+      <div className="mt-6 flex flex-col gap-4 rounded-2xl border bg-black p-6 text-white sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3>🟠 OfferUp</h3>
-          <button
-            type="button"
-            onClick={() => copyPlatform("offerup")}
-            className="mt-1 rounded border px-3 py-1"
-          >
-            Copy
-          </button>
-          <textarea
-            value={listings.offerup}
-            readOnly
-            className="mt-2 min-h-[120px] w-full rounded border p-2"
-          />
+          <h2 className="text-xl font-black">Marketing &amp; Listing Distribution</h2>
+          <p className="mt-1 text-sm text-white/70">
+            Publish to Facebook or generate ready-to-post Craigslist and OfferUp
+            listings for this vehicle.
+          </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => router.push(`/admin/marketing?carId=${id}`)}
+          className="inline-flex items-center justify-center rounded-2xl bg-red-600 px-6 py-3 font-bold text-white hover:bg-red-700"
+        >
+          Open Marketing Center
+        </button>
       </div>
 
       <div className="mt-8 rounded-2xl border bg-white p-6">
@@ -743,12 +625,12 @@ export default function EditCarPage() {
           )}
         </div>
 
-        <input
-          value={car.videoUrl || ""}
-          onChange={(e) => setCar({ ...car, videoUrl: e.target.value })}
-          placeholder="YouTube Video URL"
-          className="mt-4 w-full rounded-xl border p-3"
-        />
+        <div className="mt-4">
+          <VehicleVideoField
+            value={car.videoUrl || ""}
+            onChange={(url) => setCar({ ...car, videoUrl: url })}
+          />
+        </div>
 
         <textarea
           value={car.description || ""}
@@ -760,20 +642,6 @@ export default function EditCarPage() {
         <div className="mt-6">
           <h2 className="mb-2 font-bold">Photos</h2>
           <PhotoManager value={images} onChange={setImages} />
-        </div>
-
-        <div className="mt-4">
-          <CloudinaryUploader
-            onUploaded={(files: Img[]) => {
-              const next = [...images, ...files];
-
-              if (next.length > 0 && !next.some((img) => img.isCover)) {
-                next[0].isCover = true;
-              }
-
-              setImages(next);
-            }}
-          />
         </div>
       </div>
     </div>

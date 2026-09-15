@@ -1,19 +1,28 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Play, ArrowLeft } from "lucide-react";
+import { parseVideoUrl } from "@/lib/videoUrl";
+import VideoPlayer from "@/components/VideoPlayer";
 
 type Props = {
   images: { url: string }[];
+  videoUrl?: string;
+  videoPoster?: string;
 };
 
-export default function Gallery({ images }: Props) {
+export default function Gallery({ images, videoUrl, videoPoster }: Props) {
   const safeImages = (images || [])
     .map((img) => img?.url)
     .filter((url) => typeof url === "string" && url.trim() !== "");
 
+  const videoSource = useMemo(() => parseVideoUrl(videoUrl), [videoUrl]);
+  const poster = videoPoster || safeImages[0] || "/car-placeholder.png";
+
   const [current, setCurrent] = useState(0);
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"photos" | "video">("photos");
 
   const active =
     safeImages.length > 0 ? safeImages[current] : "/car-placeholder.png";
@@ -28,35 +37,59 @@ export default function Gallery({ images }: Props) {
     setCurrent((prev) => (prev === safeImages.length - 1 ? 0 : prev + 1));
   };
 
+  function showPhoto(index: number) {
+    setMode("photos");
+    setCurrent(index);
+  }
+
+  const sideRowCount = Math.min(safeImages.length, 5) + (videoSource ? 1 : 0);
+
   return (
     <>
       <div className="grid gap-2 lg:grid-cols-[1fr_120px]">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="relative h-[520px] overflow-hidden bg-gray-100 text-left"
-        >
-          <Image
-            src={active}
-            alt="Vehicle image"
-            fill
-            sizes="900px"
-            className="object-cover"
-          />
-
-          <div className="absolute bottom-4 right-4 rounded-full bg-black/80 px-4 py-2 text-sm font-bold text-white">
-            View Photos {current + 1}/{safeImages.length}
+        {mode === "video" && videoSource ? (
+          <div className="relative h-[520px] overflow-hidden bg-black">
+            <VideoPlayer source={videoSource} poster={poster} />
+            <button
+              type="button"
+              onClick={() => setMode("photos")}
+              className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-black shadow hover:bg-white"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back to Photos
+            </button>
           </div>
-        </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="relative h-[520px] overflow-hidden bg-gray-100 text-left"
+          >
+            <Image
+              src={active}
+              alt="Vehicle image"
+              fill
+              sizes="900px"
+              className="object-cover"
+            />
 
-        <div className="hidden grid-rows-5 gap-2 lg:grid">
+            <div className="absolute bottom-4 right-4 rounded-full bg-black/80 px-4 py-2 text-sm font-bold text-white">
+              View Photos {current + 1}/{safeImages.length}
+            </div>
+          </button>
+        )}
+
+        <div
+          className="hidden gap-2 lg:grid"
+          style={{ gridTemplateRows: `repeat(${sideRowCount || 1}, 1fr)` }}
+        >
           {safeImages.slice(0, 5).map((img, index) => (
             <button
               key={index}
               type="button"
-              onClick={() => setCurrent(index)}
+              onClick={() => showPhoto(index)}
               className={`relative overflow-hidden bg-gray-100 ${
-                current === index ? "ring-4 ring-red-700" : ""
+                mode === "photos" && current === index ? "ring-4 ring-red-700" : ""
               }`}
             >
               <Image
@@ -74,18 +107,48 @@ export default function Gallery({ images }: Props) {
               )}
             </button>
           ))}
+
+          {videoSource && (
+            <button
+              type="button"
+              onClick={() => setMode("video")}
+              aria-label="Watch vehicle video"
+              className={`group relative overflow-hidden bg-gray-100 ${
+                mode === "video" ? "ring-4 ring-red-700" : ""
+              }`}
+            >
+              <Image
+                src={poster}
+                alt=""
+                fill
+                sizes="120px"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40 transition group-hover:bg-black/50" />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-black">
+                  <Play className="ml-0.5 h-4 w-4 fill-black" aria-hidden="true" />
+                </span>
+              </span>
+              <span className="absolute left-1 top-1 rounded bg-red-700 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
+                Video
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
-      {safeImages.length > 1 && (
+      {(safeImages.length > 1 || videoSource) && (
         <div className="mt-3 flex gap-2 overflow-x-auto pb-2 lg:hidden">
           {safeImages.map((img, index) => (
             <button
               key={index}
               type="button"
-              onClick={() => setCurrent(index)}
+              onClick={() => showPhoto(index)}
               className={`relative h-20 w-28 shrink-0 overflow-hidden rounded-lg border ${
-                current === index ? "border-red-700" : "border-gray-300"
+                mode === "photos" && current === index
+                  ? "border-red-700"
+                  : "border-gray-300"
               }`}
             >
               <Image
@@ -97,6 +160,34 @@ export default function Gallery({ images }: Props) {
               />
             </button>
           ))}
+
+          {videoSource && (
+            <button
+              type="button"
+              onClick={() => setMode("video")}
+              aria-label="Watch vehicle video"
+              className={`group relative h-20 w-28 shrink-0 overflow-hidden rounded-lg border ${
+                mode === "video" ? "border-red-700" : "border-gray-300"
+              }`}
+            >
+              <Image
+                src={poster}
+                alt=""
+                fill
+                sizes="112px"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40 transition group-hover:bg-black/50" />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-black">
+                  <Play className="ml-0.5 h-3.5 w-3.5 fill-black" aria-hidden="true" />
+                </span>
+              </span>
+              <span className="absolute left-1 top-1 rounded bg-red-700 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
+                Video
+              </span>
+            </button>
+          )}
         </div>
       )}
 

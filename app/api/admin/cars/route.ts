@@ -47,6 +47,7 @@ export async function POST(req: Request) {
       model: body.model,
       mileage: Number(body.mileage || 0),
       description: body.description || "",
+      videoUrl: body.videoUrl || "",
       images,
       status,
       isActive: status === "sold" || status === "archived" ? false : true,

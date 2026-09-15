@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import PhotoManager from "@/components/admin/PhotoManager";
+import PhotoManager from "@/components/PhotoManager";
+import VehicleVideoField from "@/components/admin/VehicleVideoField";
 
 export default function AddCar() {
   const [loading, setLoading] = useState(false);
@@ -9,6 +10,7 @@ export default function AddCar() {
   const [images, setImages] = useState<any[]>([]);
   const [status, setStatus] = useState("available");
   const [isFeatured, setIsFeatured] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
 
   async function decodeVin() {
     const vinInput =
@@ -108,7 +110,7 @@ const payload = {
   mileage: Number(formData.get("mileage") || 0),
   titleStatus: String(formData.get("titleStatus") || "unknown"),
   description: String(formData.get("description") || ""),
-  videoUrl: String(formData.get("videoUrl") || ""),
+  videoUrl,
   images,
   status,
   isFeatured,
@@ -132,6 +134,7 @@ const payload = {
         setImages([]);
         setStatus("available");
         setIsFeatured(false);
+        setVideoUrl("");
       } else {
         alert(result.error || "Error");
       }
@@ -144,8 +147,8 @@ const payload = {
   };
 
   return (
-    <div className="p-10 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">Add Car</h1>
+    <div className="mx-auto max-w-3xl">
+      <h1 className="mb-6 text-3xl font-black text-gray-900">Add Vehicle</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex gap-2">
@@ -232,11 +235,7 @@ const payload = {
             Featured Vehicle
           </label>
         </div>
-        <input
-  name="videoUrl"
-  placeholder="YouTube Video URL"
-  className="border p-2 w-full"
-/>
+        <VehicleVideoField value={videoUrl} onChange={setVideoUrl} />
 
         <textarea
           name="description"

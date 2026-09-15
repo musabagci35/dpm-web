@@ -120,26 +120,16 @@ export default function EditPartPage({
   }
 
   return (
-    <div className="max-w-3xl p-10">
+    <div className="mx-auto max-w-3xl">
+      <button
+        type="button"
+        onClick={() => router.push("/admin/parts")}
+        className="mb-4 rounded-xl border px-4 py-2 text-sm font-semibold"
+      >
+        ← Back to Parts
+      </button>
 
-<div className="mb-4 flex gap-2">
-  <button
-    type="button"
-    onClick={() => router.push("/admin/dashboard")}
-    className="rounded-xl border px-4 py-2"
-  >
-    ← Dashboard
-  </button>
-
-  <button
-    type="button"
-    onClick={() => router.push("/admin/parts")}
-    className="rounded-xl border px-4 py-2"
-  >
-    ← Parts
-  </button>
-</div>
-      <h1 className="mb-6 text-2xl font-bold">Edit Part</h1>
+      <h1 className="mb-6 text-3xl font-black text-gray-900">Edit Part</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <input

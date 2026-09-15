@@ -7,6 +7,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+function normalizeResourceType(value: unknown): "image" | "video" {
+  return value === "video" ? "video" : "image";
+}
+
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get("content-type") || "";
@@ -21,9 +25,11 @@ export async function POST(req: Request) {
         );
       }
 
+      const resourceType = normalizeResourceType(body.resourceType);
+
       const uploaded = await cloudinary.uploader.upload(body.file, {
         folder: "driveprimemotors/vehicles",
-        resource_type: "image",
+        resource_type: resourceType,
         overwrite: false,
         unique_filename: true,
       });
@@ -37,6 +43,7 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const files = formData.getAll("files") as File[];
+    const resourceType = normalizeResourceType(formData.get("resourceType"));
 
     if (!files || files.length === 0) {
       return NextResponse.json(
@@ -56,7 +63,7 @@ export async function POST(req: Request) {
           .upload_stream(
             {
               folder: "driveprimemotors/vehicles",
-              resource_type: "image",
+              resource_type: resourceType,
               overwrite: false,
               unique_filename: true,
             },

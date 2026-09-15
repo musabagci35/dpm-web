@@ -12,7 +12,7 @@ export default async function VinReportResultPage({ searchParams }: Props) {
 
   if (!vin || vin.length !== 17) {
     return (
-      <main className="min-h-screen bg-gray-50 px-6 py-16">
+      <div className="min-h-screen bg-gray-50 px-6 py-16">
         <div className="mx-auto max-w-3xl rounded-3xl border bg-white p-8 shadow-sm">
           <h1 className="text-3xl font-black">Invalid VIN</h1>
           <p className="mt-3 text-gray-600">
@@ -26,7 +26,7 @@ export default async function VinReportResultPage({ searchParams }: Props) {
             Try Again
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -50,7 +50,7 @@ export default async function VinReportResultPage({ searchParams }: Props) {
   const doors = vehicle.Doors || "N/A";
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <section className="bg-gradient-to-br from-black via-zinc-900 to-red-950 px-6 py-16 text-white">
         <div className="mx-auto max-w-7xl">
           <Link
@@ -173,7 +173,7 @@ export default async function VinReportResultPage({ searchParams }: Props) {
           </aside>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 

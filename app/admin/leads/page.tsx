@@ -145,22 +145,22 @@ export default function AdminLeadsPage() {
   }, [leads]);
 
   if (loading) {
-    return <div className="p-10">Loading CRM...</div>;
+    return <div className="p-10">Loading leads...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div>
       {/* HEADER */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold">Lead CRM Pipeline</h1>
+        <h1 className="text-3xl font-black text-gray-900">Leads</h1>
 
-        <p className="text-gray-500 mt-2">
+        <p className="text-gray-500 mt-1">
           Manage customer follow-ups, deals, notes, and SMS replies.
         </p>
       </div>
 
       {/* BOARD */}
-      <div className="grid gap-6 lg:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {columns.map((status) => (
           <div
             key={status}

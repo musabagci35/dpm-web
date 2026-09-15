@@ -180,7 +180,7 @@ ${auctionCar.announcements || ""}
   const ai = analyzeAuctionVehicle(car);
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
+    <div>
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -357,6 +357,6 @@ ${auctionCar.announcements || ""}
           </button>
         </form>
       </div>
-    </main>
+    </div>
   );
 }
