@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import RecentlySold from "@/components/RecentlySold";
 
 function getCarImage(car: any) {
   const coverImage = car.images?.find((img: any) => img.isCover)?.url;
@@ -321,6 +322,9 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      {/* RECENTLY SOLD */}
+      <RecentlySold />
 
       {/* FINANCING / SELL / PARTS */}
       <section className="bg-gray-50 py-20">
