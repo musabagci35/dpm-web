@@ -1,7 +1,21 @@
+require("dotenv").config({ path: ".env.local" });
+
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const MONGODB_URI = "mongodb+srv://Drivermotor65:f6bNKK74RnmgIQvp@cluster0.ahoub.mongodb.net/dpm?retryWrites=true&w=majority";
+const MONGODB_URI = process.env.MONGODB_URI;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@driveprimemotors.com";
+
+if (!MONGODB_URI) {
+  console.error("Missing MONGODB_URI in environment.");
+  process.exit(1);
+}
+
+if (!ADMIN_PASSWORD) {
+  console.error("Missing ADMIN_PASSWORD in environment.");
+  process.exit(1);
+}
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,22 +32,26 @@ const User = mongoose.models.User || mongoose.model("User", userSchema);
 async function run() {
   await mongoose.connect(MONGODB_URI);
 
-  await User.findOneAndUpdate(
-    { email: "admin@driveprimemotors.com" },
-    {
-      email: "admin@driveprimemotors.com",
-      passwordHash: await bcrypt.hash("123456", 10),
-      role: "admin",
-      name: "Admin",
-    },
-    { upsert: true, new: true }
-  );
+  try {
+    await User.findOneAndUpdate(
+      { email: ADMIN_EMAIL },
+      {
+        email: ADMIN_EMAIL,
+        passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 10),
+        role: "admin",
+        name: "Admin",
+      },
+      { upsert: true, new: true }
+    );
 
-  console.log("✅ Admin ready");
-  console.log("Email: admin@driveprimemotors.com");
-  console.log("Password: 123456");
-
-  await mongoose.disconnect();
+    console.log("✅ Admin ready");
+    console.log(`Email: ${ADMIN_EMAIL}`);
+  } finally {
+    await mongoose.disconnect();
+  }
 }
 
-run().catch(console.error);
+run().catch((err) => {
+  console.error("Failed to reset admin:", err.message);
+  process.exit(1);
+});
