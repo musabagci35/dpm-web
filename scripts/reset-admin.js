@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 async function run() {
-  await mongoose.connect(MONGODB_URI);
+  await mongoose.connect(MONGODB_URI, { dbName: "driveprimemotors" });
 
   try {
     await User.findOneAndUpdate(
