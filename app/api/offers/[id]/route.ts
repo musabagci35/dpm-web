@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import Offer from "@/models/Offer";
+import { getAdminSession } from "@/lib/adminSession";
 
 export async function PATCH(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await context.params;
 
