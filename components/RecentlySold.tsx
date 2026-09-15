@@ -10,7 +10,7 @@ function getCarImage(car: any) {
   if (coverImage && coverImage.startsWith("http")) return coverImage;
   if (firstImage && firstImage.startsWith("http")) return firstImage;
 
-  return "/car.png";
+  return "/no-photo.svg";
 }
 
 function formatMileage(mileage?: number) {
