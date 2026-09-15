@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/requireAdmin";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import { getAdminSession } from "@/lib/adminSession";
+
+const ADMIN_LIST_FIELDS =
+  "title slug year make model trim price mileage vin status isActive isFeatured images createdAt updatedAt";
+
+const STATUS_TABS = ["available", "pending", "sold", "archived"];
 
 function makeSlug(data: any) {
   return `${data.year || ""}-${data.make || ""}-${data.model || ""}-${data.vin || Date.now()}`
@@ -10,9 +15,49 @@ function makeSlug(data: any) {
     .replace(/(^-|-$)/g, "");
 }
 
+export async function GET(req: Request) {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await connectDB();
+
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status") || "";
+
+    const query: any =
+      status && STATUS_TABS.includes(status) ? { status } : {};
+
+    const cars = await Car.find(query)
+      .select(ADMIN_LIST_FIELDS)
+      .sort({ isFeatured: -1, createdAt: -1 })
+      .lean();
+
+    return NextResponse.json({
+      success: true,
+      count: cars.length,
+      vehicles: cars.map((car: any) => ({ ...car, _id: car._id.toString() })),
+    });
+  } catch (error) {
+    console.error("LIST ADMIN CARS ERROR:", error);
+    return NextResponse.json(
+      { success: false, error: "Server error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
-    await requireAdmin();
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await connectDB();
 
     const body = await req.json();

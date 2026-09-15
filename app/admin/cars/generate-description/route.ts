@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server"
+import { getAdminSession } from "@/lib/adminSession"
 
 export async function POST(req:Request){
+
+const session = await getAdminSession()
+
+if (!session) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+}
 
 const {year, make, model, engine, horsepower, mileage} = await req.json()
 
