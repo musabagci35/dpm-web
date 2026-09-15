@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import Car from "@/models/Car";
 import { connectDB } from "@/lib/mongodb";
+import { getAdminSession } from "@/lib/adminSession";
 
 function money(n: any) {
   return Number(n || 0);
@@ -23,6 +24,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     await connectDB();
 

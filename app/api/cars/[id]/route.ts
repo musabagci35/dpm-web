@@ -4,6 +4,7 @@ import { z } from "zod";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
 import { requireAdmin } from "@/lib/requireAdmin";
+import { getAdminSession } from "@/lib/adminSession";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -37,7 +38,11 @@ const updateSchema = z.object({
 
 export async function GET(_req: Request, { params }: RouteContext) {
   try {
-    await requireAdmin();
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { id } = await params;
 

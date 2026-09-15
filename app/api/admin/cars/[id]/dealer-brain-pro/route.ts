@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import { getAdminSession } from "@/lib/adminSession";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
 export async function GET(_req: Request, { params }: RouteContext) {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
 
   await connectDB();

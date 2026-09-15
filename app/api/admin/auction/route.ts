@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import AuctionVehicle from "@/models/AuctionVehicle";
+import { getAdminSession } from "@/lib/adminSession";
 
 function calcDecision(profit: number) {
   if (profit >= 4000) return "bid";
@@ -9,6 +10,12 @@ function calcDecision(profit: number) {
 }
 
 export async function GET() {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   await connectDB();
 
   const lots = await AuctionVehicle.find()

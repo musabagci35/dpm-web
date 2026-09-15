@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import Offer from "@/models/Offer";
+import { getAdminSession } from "@/lib/adminSession";
 
 export async function POST(req: Request) {
   try {
@@ -34,6 +35,12 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     await connectDB();
     const { searchParams } = new URL(req.url);
