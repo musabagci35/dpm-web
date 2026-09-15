@@ -24,7 +24,7 @@ export default async function RecentlySold() {
   const soldCars = await Car.find({ status: "sold" })
     .sort({ updatedAt: -1 })
     .limit(6)
-    .select("year make model trim mileage images slug title")
+    .select("year make model trim mileage images slug")
     .lean();
 
   if (soldCars.length === 0) return null;
@@ -45,9 +45,9 @@ export default async function RecentlySold() {
 
       <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
         {soldCars.map((car: any) => {
-          const title =
-            car.title ||
-            `${car.year} ${car.make} ${car.model} ${car.trim || ""}`.trim();
+          const title = `${car.year} ${car.make} ${car.model} ${
+            car.trim || ""
+          }`.trim();
 
           return (
             <Link
