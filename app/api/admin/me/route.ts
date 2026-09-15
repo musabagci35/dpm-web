@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
+import { getAdminSession } from "@/lib/adminSession";
 
-export async function GET(req: Request) {
-  await connectDB();
+export async function GET() {
+  const session = await getAdminSession();
 
-  const token = req.headers.get("cookie")?.split("admin-token=")[1];
-
-  if (!token) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = await User.findById(token).select("-passwordHash");
+  await connectDB();
+
+  const user = await User.findById(session.userId).select("-passwordHash");
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
 
   return NextResponse.json(user);
 }
