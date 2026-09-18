@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,12 +12,26 @@ import {
 } from "react-native";
 
 import { AdminAuthError, adminLogin } from "@/lib/auth";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function AdminLoginScreen() {
+  const { reason } = useLocalSearchParams<{ reason?: string }>();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Arriving here because the dashboard's own session check failed (e.g. the
+  // admin-token cookie from a prior login didn't verify) must be explained,
+  // not a silent bounce back to this screen with no indication anything
+  // happened.
+  useEffect(() => {
+    if (reason === "session_expired") {
+      setError(
+        "Your session could not be verified with the server. Please sign in again."
+      );
+    }
+  }, [reason]);
 
   async function handleSubmit() {
     setError(null);
@@ -38,7 +52,9 @@ export default function AdminLoginScreen() {
       const message =
         err instanceof AdminAuthError
           ? err.message
-          : "Could not sign in. Check your connection and try again.";
+          : `Could not sign in. Check your connection and try again. (${
+              err instanceof Error ? err.message : "unknown error"
+            })`;
       setError(message);
     } finally {
       setSubmitting(false);
@@ -55,6 +71,7 @@ export default function AdminLoginScreen() {
         <Text style={styles.subtitle}>
           Drive Prime Motors staff access only.
         </Text>
+        <Text style={styles.debugHost}>Connecting to {API_BASE_URL}</Text>
 
         <TextInput
           style={styles.input}
@@ -107,7 +124,8 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: { fontSize: 24, fontWeight: "900", color: "#111827" },
-  subtitle: { marginTop: 4, marginBottom: 20, color: "#6b7280", fontSize: 13 },
+  subtitle: { marginTop: 4, color: "#6b7280", fontSize: 13 },
+  debugHost: { marginTop: 4, marginBottom: 16, color: "#9ca3af", fontSize: 11 },
   input: {
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -120,6 +138,7 @@ const styles = StyleSheet.create({
   error: {
     color: "#dc2626",
     fontSize: 13,
+    lineHeight: 18,
     marginBottom: 12,
     fontWeight: "600",
   },

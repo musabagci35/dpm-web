@@ -4,7 +4,7 @@ import Car from "@/models/Car";
 import { getAdminSession } from "@/lib/adminSession";
 
 const ADMIN_LIST_FIELDS =
-  "title slug year make model trim price mileage vin status isActive isFeatured images createdAt updatedAt";
+  "title slug year make model trim price mileage vin phone status isActive isFeatured images createdAt updatedAt";
 
 const STATUS_TABS = ["available", "pending", "sold", "archived"];
 
@@ -90,9 +90,18 @@ export async function POST(req: Request) {
       year: Number(body.year || 0),
       make: body.make,
       model: body.model,
+      trim: body.trim || "",
+      bodyClass: body.bodyClass || "",
+      engine: body.engine || "",
+      transmission: body.transmission || "",
+      drivetrain: body.drivetrain || "",
+      fuelType: body.fuelType || "",
       mileage: Number(body.mileage || 0),
+      titleStatus: body.titleStatus || "unknown",
       description: body.description || "",
       videoUrl: body.videoUrl || "",
+      phone: body.phone || "",
+      carfaxUrl: body.carfaxUrl || "",
       images,
       status,
       isActive: status === "sold" || status === "archived" ? false : true,

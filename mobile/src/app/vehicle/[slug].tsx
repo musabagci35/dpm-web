@@ -15,6 +15,7 @@ import {
 
 import ContactForm from "@/components/ContactForm";
 import { fetchVehicle, VehicleDetail } from "@/lib/api";
+import { DEALER_PHONE, DEALER_PHONE_DISPLAY } from "@/lib/constants";
 import {
   formatMileage,
   formatPrice,
@@ -22,9 +23,6 @@ import {
   titleStatusLabel,
   vehicleTitle,
 } from "@/lib/format";
-
-const DEALER_PHONE = "+19162618880";
-const DEALER_PHONE_DISPLAY = "(916) 261-8880";
 
 export default function VehicleDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -93,7 +91,7 @@ export default function VehicleDetailScreen() {
         <Text style={styles.centeredText}>
           It may have been sold or removed from our inventory.
         </Text>
-        <Link href="/" style={styles.centeredLink}>
+        <Link href="/inventory" style={styles.centeredLink}>
           Browse current inventory →
         </Link>
       </View>
@@ -239,6 +237,18 @@ export default function VehicleDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {/* Only ever a real, dealer-entered link — this app never generates
+            or infers a CARFAX report from the VIN. */}
+        {vehicle.carfaxUrl && /^https?:\/\//i.test(vehicle.carfaxUrl) ? (
+          <TouchableOpacity
+            style={styles.carfaxButton}
+            onPress={() => Linking.openURL(vehicle.carfaxUrl as string)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.carfaxButtonText}>View CARFAX Report</Text>
+          </TouchableOpacity>
+        ) : null}
+
         {isSold ? (
           <View style={styles.soldNotice}>
             <Text style={styles.soldNoticeHeading}>This vehicle is sold</Text>
@@ -246,7 +256,7 @@ export default function VehicleDetailScreen() {
               It&apos;s shown for reference only and is no longer available.
               Similar vehicles come through regularly.
             </Text>
-            <Link href="/" style={styles.soldNoticeLink}>
+            <Link href="/inventory" style={styles.soldNoticeLink}>
               Browse current inventory →
             </Link>
           </View>
@@ -387,6 +397,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   videoButtonText: { color: "#b91c1c", fontWeight: "800" },
+
+  carfaxButton: {
+    marginTop: 12,
+    backgroundColor: "#111827",
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+  carfaxButtonText: { color: "#fff", fontWeight: "800" },
 
   soldNotice: {
     marginTop: 24,

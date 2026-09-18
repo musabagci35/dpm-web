@@ -70,7 +70,7 @@ export default function RecentlySoldScreen() {
           <TouchableOpacity style={styles.stateButton} onPress={onRetry}>
             <Text style={styles.stateButtonText}>Try Again</Text>
           </TouchableOpacity>
-          <Link href="/" style={styles.stateLink}>
+          <Link href="/inventory" style={styles.stateLink}>
             Browse current inventory →
           </Link>
         </View>
@@ -100,7 +100,7 @@ export default function RecentlySoldScreen() {
                 the kind of inventory we carry — if one is close to what you
                 want, tell us and we&apos;ll watch for something similar.
               </Text>
-              <Link href="/" style={styles.headerLink}>
+              <Link href="/inventory" style={styles.headerLink}>
                 Browse current inventory →
               </Link>
             </View>
@@ -116,7 +116,7 @@ export default function RecentlySoldScreen() {
               Nothing has been published yet — everything we have is on the
               current inventory page.
             </Text>
-            <Link href="/" style={styles.stateLink}>
+            <Link href="/inventory" style={styles.stateLink}>
               Browse current inventory →
             </Link>
           </View>

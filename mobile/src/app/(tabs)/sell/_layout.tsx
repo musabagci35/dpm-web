@@ -1,0 +1,21 @@
+import { Stack } from "expo-router";
+
+export default function SellStackLayout() {
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: "#111827" },
+        headerTintColor: "#fff",
+        headerTitleStyle: { fontWeight: "800" },
+        contentStyle: { backgroundColor: "#f9fafb" },
+      }}
+    >
+      <Stack.Screen name="index" options={{ title: "Sell My Car" }} />
+      <Stack.Screen name="login" options={{ title: "Seller Sign In" }} />
+      <Stack.Screen name="register" options={{ title: "Create Seller Account" }} />
+      <Stack.Screen name="my-listings" options={{ title: "My Listings" }} />
+      <Stack.Screen name="new" options={{ title: "List Your Vehicle" }} />
+      <Stack.Screen name="listing/[id]" options={{ title: "Your Listing" }} />
+    </Stack>
+  );
+}

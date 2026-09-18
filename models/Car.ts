@@ -51,7 +51,10 @@ const CarSchema = new Schema(
     vin: { type: String, trim: true, uppercase: true, sparse: true, index: true },
     titleStatus: {
       type: String,
-      enum: ["clean", "salvage", "rebuilt", "parts_only", "unknown"],
+      // "parts_only" is kept for existing records even though no current
+      // admin UI writes it — removing it would fail validation on any future
+      // update to an older car that already has that value.
+      enum: ["clean", "salvage", "rebuilt", "title_pending", "parts_only", "unknown"],
       default: "unknown",
       index: true,
     },
@@ -78,6 +81,9 @@ const CarSchema = new Schema(
 
     description: { type: String, trim: true, default: "" },
     videoUrl: { type: String, trim: true, default: "" },
+    phone: { type: String, trim: true, default: "" },
+    /** Optional link to a real third-party CARFAX report — never generated or inferred. */
+    carfaxUrl: { type: String, trim: true, default: "" },
 
     images: [ImageSchema],
 

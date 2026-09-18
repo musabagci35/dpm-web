@@ -45,8 +45,12 @@ export function titleStatusLabel(status?: string): string | null {
       return "Salvage";
     case "rebuilt":
       return "Rebuilt";
+    case "title_pending":
+      return "Title Pending";
     case "parts_only":
       return "Parts Only";
+    case "unknown":
+      return null;
     default:
       return null;
   }

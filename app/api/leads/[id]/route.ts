@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { connectDB } from "@/lib/mongodb";
 import Lead from "@/models/Lead";
+import { getAdminSession } from "@/lib/adminSession";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -34,6 +35,12 @@ export async function PATCH(
   req: Request,
   { params }: RouteContext
 ) {
+  const session = await getAdminSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
 
@@ -115,6 +122,12 @@ export async function DELETE(
     req: Request,
     { params }: RouteContext
   ) {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
       const { id } = await params;
   

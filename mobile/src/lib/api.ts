@@ -1,4 +1,18 @@
-const DEFAULT_BASE_URL = "https://driveprimemotorsllc.com";
+/**
+ * The bare apex domain 307-redirects every request (including POSTs) to
+ * https://www.driveprimemotorsllc.com at the Vercel platform level, before
+ * any application code runs. A browser tab only pays that redirect once on
+ * initial navigation and then talks same-origin from then on, so the
+ * website never notices. This app issues an absolute-URL fetch for every
+ * request, so hitting the apex meant every single call — including the
+ * admin login POST and every follow-up session-verification GET — took a
+ * redirect hop, and the admin-token cookie set on the redirected response
+ * was unreliable to persist/resend across React Native's networking layer
+ * on subsequent calls. Using the final (www) host directly removes the
+ * redirect, and with it the intermittent "login succeeds but the session
+ * never verifies" failure.
+ */
+const DEFAULT_BASE_URL = "https://www.driveprimemotorsllc.com";
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_BASE_URL;
@@ -41,6 +55,8 @@ export type VehicleSummary = {
   bodyClass?: string;
   location?: string;
   videoUrl?: string;
+  /** Only ever a real, dealer-entered CARFAX link — never generated from the VIN. */
+  carfaxUrl?: string;
   vinLast6?: string;
   /** "vin-decode" when a blank dealer spec was filled from the NHTSA decode. */
   specsSource?: "dealer" | "vin-decode";
@@ -582,15 +598,50 @@ export type AdminCarInput = {
   mileage: number;
   vin?: string;
   description?: string;
+  phone?: string;
+  engine?: string;
+  transmission?: string;
+  drivetrain?: string;
+  fuelType?: string;
+  bodyClass?: string;
+  titleStatus?: "clean" | "salvage" | "rebuilt" | "title_pending" | "unknown";
+  carfaxUrl?: string;
   status?: "available" | "pending" | "sold" | "archived";
   images?: VehicleImage[];
 };
 
+/** Full admin car record — includes fields the public API strips. */
+export type AdminVehicle = VehicleSummary & {
+  phone?: string;
+  vin?: string;
+};
+
 export async function fetchAdminInventory(): Promise<VehicleSummary[]> {
-  const data = await requestJson(
-    `${API_BASE_URL}/api/cars?includeSold=true&limit=100`
-  );
+  const data = await requestJson(`${API_BASE_URL}/api/admin/cars`, {
+    credentials: "include",
+  });
   return vehicleArray(data);
+}
+
+export async function fetchAdminCar(id: string): Promise<AdminVehicle> {
+  const data = await requestFromCandidates(
+    [
+      `${API_BASE_URL}/api/cars/${encodeURIComponent(id)}`,
+      `${API_BASE_URL}/api/admin/cars/${encodeURIComponent(id)}`,
+    ],
+    { credentials: "include" }
+  );
+  return normalizeVehicle(data?.car || data);
+}
+
+export async function deleteAdminCar(id: string): Promise<void> {
+  await requestFromCandidates(
+    [
+      `${API_BASE_URL}/api/admin/cars/${encodeURIComponent(id)}`,
+      `${API_BASE_URL}/api/cars/${encodeURIComponent(id)}`,
+    ],
+    { method: "DELETE", credentials: "include" }
+  );
 }
 
 export async function createAdminCar(input: AdminCarInput): Promise<VehicleSummary> {
@@ -623,4 +674,109 @@ export async function updateAdminCar(
     }
   );
   return normalizeVehicle(data?.car || data);
+}
+
+/* ------------------------------------------------------------------ *
+ * Admin — leads
+ * ------------------------------------------------------------------ */
+
+export type LeadStatus =
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "appointment"
+  | "won"
+  | "lost";
+
+/** Matches models/Lead.ts as returned (unmodified) by GET /api/leads. */
+export type AdminLead = {
+  _id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  message?: string;
+  vin?: string;
+  carId?: string | null;
+  carTitle?: string;
+  source: string;
+  status: LeadStatus;
+  priority?: string;
+  createdAt: string;
+};
+
+function normalizeLead(value: any): AdminLead {
+  return {
+    _id: str(value?._id) || str(value?.id),
+    name: str(value?.name),
+    phone: str(value?.phone),
+    email: str(value?.email),
+    message: str(value?.message),
+    vin: str(value?.vin),
+    carId: value?.carId ? str(value.carId) : null,
+    carTitle: str(value?.carTitle),
+    source: str(value?.source) || "website",
+    status: (str(value?.status) || "new") as LeadStatus,
+    priority: str(value?.priority),
+    createdAt: str(value?.createdAt),
+  };
+}
+
+export async function fetchAdminLeads(): Promise<AdminLead[]> {
+  const data = await requestJson(`${API_BASE_URL}/api/leads`, {
+    credentials: "include",
+  });
+  const list = Array.isArray(data) ? data : data?.leads;
+  return Array.isArray(list) ? list.map(normalizeLead) : [];
+}
+
+export async function updateLeadStatus(
+  id: string,
+  status: LeadStatus
+): Promise<AdminLead> {
+  const data = await requestJson(
+    `${API_BASE_URL}/api/admin/leads/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ status }),
+    }
+  );
+  return normalizeLead(data?.lead || data);
+}
+
+/* ------------------------------------------------------------------ *
+ * Admin — Cloudinary signed upload
+ * ------------------------------------------------------------------ */
+
+export type CloudinarySignature = {
+  timestamp: number;
+  folder: string;
+  signature: string;
+  cloudName: string;
+  apiKey: string;
+};
+
+export async function getCloudinarySignature(
+  folder: string
+): Promise<CloudinarySignature> {
+  const res = await fetch(`${API_BASE_URL}/api/admin/cloudinary-sign`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ folder }),
+  });
+
+  const data = await parseJsonSafe(res);
+
+  if (!res.ok || !data?.signature) {
+    throw new ApiError(
+      typeof data?.error === "string"
+        ? data.error
+        : "Could not get an upload signature.",
+      res.status
+    );
+  }
+
+  return data as CloudinarySignature;
 }

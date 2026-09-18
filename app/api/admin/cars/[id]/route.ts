@@ -37,9 +37,21 @@ export async function PATCH(req: Request, { params }: RouteContext) {
 
   if ("title" in body) update.title = body.title;
   if ("price" in body) update.price = Number(body.price || 0);
+  if ("year" in body) update.year = Number(body.year || 0);
+  if ("make" in body) update.make = body.make || "";
+  if ("model" in body) update.model = body.model || "";
+  if ("trim" in body) update.trim = body.trim || "";
+  if ("bodyClass" in body) update.bodyClass = body.bodyClass || "";
+  if ("engine" in body) update.engine = body.engine || "";
+  if ("transmission" in body) update.transmission = body.transmission || "";
+  if ("drivetrain" in body) update.drivetrain = body.drivetrain || "";
+  if ("fuelType" in body) update.fuelType = body.fuelType || "";
   if ("mileage" in body) update.mileage = Number(body.mileage || 0);
+  if ("titleStatus" in body) update.titleStatus = body.titleStatus || "unknown";
   if ("description" in body) update.description = body.description || "";
   if ("videoUrl" in body) update.videoUrl = body.videoUrl || "";
+  if ("phone" in body) update.phone = body.phone || "";
+  if ("carfaxUrl" in body) update.carfaxUrl = body.carfaxUrl || "";
   if ("isActive" in body) update.isActive = body.isActive;
   if ("status" in body) update.status = body.status;
   if ("isFeatured" in body) update.isFeatured = Boolean(body.isFeatured);

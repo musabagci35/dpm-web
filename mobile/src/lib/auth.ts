@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { API_BASE_URL } from "./api";
 
 const SESSION_KEY = "dpm_admin_session";
+const REQUEST_TIMEOUT_MS = 15000;
 
 /**
  * Mirrors the safe fields GET /api/admin/me returns (password hash is
@@ -18,7 +19,22 @@ export type AdminUser = {
   name?: string;
 };
 
-export class AdminAuthError extends Error {}
+/**
+ * Carries the real HTTP status and the server's own (sanitized — it can
+ * only ever contain the fields our API routes return, never a password)
+ * response body, so the login screen can show exactly what happened
+ * instead of a generic "didn't work".
+ */
+export class AdminAuthError extends Error {
+  status?: number;
+  body?: string;
+
+  constructor(message: string, status?: number, body?: string) {
+    super(message);
+    this.status = status;
+    this.body = body;
+  }
+}
 
 async function parseJsonSafe(res: Response): Promise<any> {
   try {
@@ -28,16 +44,73 @@ async function parseJsonSafe(res: Response): Promise<any> {
   }
 }
 
+/**
+ * fetch() with a hard timeout. Without this, a request stuck on a redirect
+ * or a dropped connection leaves the caller's promise unsettled forever —
+ * from the login screen that looks exactly like "nothing happened", with
+ * the Sign In button spinning indefinitely and no error ever shown.
+ */
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  label: string
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === "AbortError";
+    throw new AdminAuthError(
+      aborted
+        ? `${label} timed out after ${REQUEST_TIMEOUT_MS / 1000}s contacting ${url}.`
+        : `${label} failed: ${err instanceof Error ? err.message : "network error"} (${url}).`
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Calls the real GET /api/admin/me. Returns null on any non-2xx response. */
 export async function fetchAdminMe(): Promise<AdminUser | null> {
-  const res = await fetch(`${API_BASE_URL}/api/admin/me`, {
-    credentials: "include",
-  });
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/admin/me`,
+    { credentials: "include" },
+    "Session check"
+  );
 
   if (!res.ok) return null;
 
   const data = await parseJsonSafe(res);
   if (!data || !data._id) return null;
+
+  return data as AdminUser;
+}
+
+/**
+ * Same as fetchAdminMe(), but for the moment right after a login POST: here
+ * a failure is unexpected and worth explaining (status + body), rather than
+ * the ordinary "not signed in yet" case fetchAdminMe() covers everywhere else.
+ */
+async function fetchAdminMeOrThrow(): Promise<AdminUser> {
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/admin/me`,
+    { credentials: "include" },
+    "Session verification"
+  );
+
+  const data = await parseJsonSafe(res);
+
+  if (!res.ok || !data?._id) {
+    throw new AdminAuthError(
+      `Login appeared to succeed, but the session did not verify (GET /api/admin/me → ${res.status}). ` +
+        `This usually means the admin-token cookie from the login response wasn't sent back — ` +
+        `check that the app is talking to the same host both times.`,
+      res.status,
+      JSON.stringify(data)
+    );
+  }
 
   return data as AdminUser;
 }
@@ -59,26 +132,30 @@ export async function adminLogin(
   email: string,
   password: string
 ): Promise<AdminUser> {
-  const res = await fetch(`${API_BASE_URL}/api/admin/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ email, password }),
-  });
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/admin/login`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email, password }),
+    },
+    "Login request"
+  );
 
   const data = await parseJsonSafe(res);
 
   if (!res.ok) {
-    throw new AdminAuthError(data?.error || "Invalid email or password.");
-  }
-
-  const user = await fetchAdminMe();
-
-  if (!user) {
+    // `data` here is only ever { error: "..." } from our own API — never the
+    // password, which this client never receives back under any status.
     throw new AdminAuthError(
-      "Login succeeded but the session could not be verified on this device. Please try again."
+      `${data?.error || "Invalid email or password."} (HTTP ${res.status})`,
+      res.status,
+      JSON.stringify(data)
     );
   }
+
+  const user = await fetchAdminMeOrThrow();
 
   if (user.role !== "admin") {
     // The account is real but not an admin — clear the session the server
@@ -94,10 +171,11 @@ export async function adminLogin(
 /** Calls the real POST /api/admin/logout and clears the local session marker. */
 export async function adminLogout(): Promise<void> {
   try {
-    await fetch(`${API_BASE_URL}/api/admin/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
+    await fetchWithTimeout(
+      `${API_BASE_URL}/api/admin/logout`,
+      { method: "POST", credentials: "include" },
+      "Logout request"
+    );
   } catch {
     // Ignore network errors here — local state is still cleared below.
   }

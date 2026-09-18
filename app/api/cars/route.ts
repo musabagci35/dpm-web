@@ -20,6 +20,17 @@ const carSchema = z.object({
   mileage: z.coerce.number().min(0),
   vin: z.string().trim().optional().default(""),
   description: z.string().optional().default(""),
+  phone: z.string().optional().default(""),
+  bodyClass: z.string().optional().default(""),
+  engine: z.string().optional().default(""),
+  transmission: z.string().optional().default(""),
+  drivetrain: z.string().optional().default(""),
+  fuelType: z.string().optional().default(""),
+  titleStatus: z
+    .enum(["clean", "salvage", "rebuilt", "title_pending", "parts_only", "unknown"])
+    .optional()
+    .default("unknown"),
+  carfaxUrl: z.string().optional().default(""),
   images: z.array(imageSchema).optional().default([]),
   status: z
     .enum(["available", "pending", "sold", "archived"])

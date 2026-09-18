@@ -28,6 +28,7 @@ export const PUBLIC_CAR_FIELDS = [
   "location",
   "videoUrl",
   "vin",
+  "carfaxUrl",
   "updatedAt",
 ].join(" ");
 
@@ -57,6 +58,8 @@ export type PublicVehicle = {
   bodyClass: string;
   location: string;
   videoUrl: string;
+  /** Only ever a dealer-entered real CARFAX link — never generated or inferred. */
+  carfaxUrl: string;
   /** Last 6 characters of the VIN only — the full VIN is never published. */
   vinLast6: string;
   /**
@@ -111,6 +114,7 @@ export function toPublicVehicle(car: any): PublicVehicle {
     bodyClass: text(car?.bodyClass),
     location: text(car?.location),
     videoUrl: text(car?.videoUrl),
+    carfaxUrl: text(car?.carfaxUrl),
     vinLast6: vin.length === 17 ? vin.slice(-6) : "",
     specsSource: "dealer",
     updatedAt: car?.updatedAt ? new Date(car.updatedAt).toISOString() : undefined,
