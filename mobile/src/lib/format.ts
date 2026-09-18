@@ -5,7 +5,7 @@ export function formatPrice(price?: number) {
 }
 
 export function formatMileage(mileage?: number) {
-  if (!mileage || mileage <= 0) return "Mileage unavailable";
+  if (!mileage || mileage <= 0) return "Mileage not listed";
   return `${Number(mileage).toLocaleString()} miles`;
 }
 
@@ -20,9 +20,12 @@ export function vehicleTitle(vehicle: {
   model: string;
   trim?: string;
 }) {
-  return `${vehicle.year} ${vehicle.make} ${vehicle.model} ${
-    vehicle.trim || ""
-  }`.trim();
+  return (
+    [vehicle.year || "", vehicle.make, vehicle.model, vehicle.trim]
+      .map((part) => String(part || "").trim())
+      .filter(Boolean)
+      .join(" ") || "Vehicle"
+  );
 }
 
 export function coverImageUrl(
@@ -31,4 +34,30 @@ export function coverImageUrl(
   if (!images || images.length === 0) return null;
   const cover = images.find((image) => image.isCover);
   return (cover || images[0])?.url || null;
+}
+
+/** Car.titleStatus is an enum; "unknown" means the dealer hasn't recorded it. */
+export function titleStatusLabel(status?: string): string | null {
+  switch (String(status || "").toLowerCase()) {
+    case "clean":
+      return "Clean";
+    case "salvage":
+      return "Salvage";
+    case "rebuilt":
+      return "Rebuilt";
+    case "parts_only":
+      return "Parts Only";
+    default:
+      return null;
+  }
+}
+
+export function formatSoldDate(value?: string): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
 }

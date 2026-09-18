@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import {
+  PUBLIC_CAR_FIELDS,
+  toPublicVehicle,
+  withDecodedSpecs,
+} from "@/lib/publicVehicle";
 
 function escapeRegex(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-
-const PUBLIC_FIELDS =
-  "slug year make model trim price mileage status images description";
 
 export async function GET(req: Request) {
   try {
@@ -59,14 +61,21 @@ export async function GET(req: Request) {
     if (sort === "mileage") sortOption = { mileage: 1 };
 
     const cars = await Car.find(query)
-      .select(PUBLIC_FIELDS)
+      .select(PUBLIC_CAR_FIELDS)
       .sort(sortOption)
       .lean();
 
+    // "cached" mode: never issue a live NHTSA request per row of a list.
+    const vehicles = await Promise.all(
+      cars.map((car: any) =>
+        withDecodedSpecs(toPublicVehicle(car), String(car.vin || ""), "cached")
+      )
+    );
+
     return NextResponse.json({
       success: true,
-      count: cars.length,
-      vehicles: cars.map((car: any) => ({ ...car, _id: car._id.toString() })),
+      count: vehicles.length,
+      vehicles,
     });
   } catch (error) {
     console.error("PUBLIC INVENTORY ERROR:", error);

@@ -8,6 +8,20 @@ import { getAdminSession } from "@/lib/adminSession";
 const baseUrl =
   process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
+// 🔥 HTML ESCAPE (lead values are customer-supplied and land in an email body)
+const escapeHtml = (value: unknown) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+// 🔥 CAR ID GUARD
+// Lead.carId is an ObjectId ref — a non-id string (or an empty one) would make
+// Lead.create throw, so anything that isn't a real id is stored as null.
+const isValidObjectId = (value: unknown): value is string =>
+  typeof value === "string" && /^[0-9a-f]{24}$/i.test(value);
+
 // 🔥 PHONE FORMAT
 const formatPhone = (phone: string) => {
   if (!phone.startsWith("+1")) {
@@ -52,13 +66,16 @@ async function sendEmail(lead: any) {
   await transporter.sendMail({
     from: `"Drive Prime Motors" <${process.env.EMAIL_USER}>`,
     to: process.env.EMAIL_USER,
-    subject: "🚀 New Lead",
+    subject: lead.vin ? "🚀 New Vehicle Request (VIN)" : "🚀 New Lead",
     html: `
       <h2>New Lead</h2>
-      <p><b>Name:</b> ${lead.name}</p>
-      <p><b>Phone:</b> ${lead.phone}</p>
-      <p><b>Email:</b> ${lead.email}</p>
-      <p><b>Message:</b> ${lead.message}</p>
+      <p><b>Name:</b> ${escapeHtml(lead.name)}</p>
+      <p><b>Phone:</b> ${escapeHtml(lead.phone)}</p>
+      <p><b>Email:</b> ${escapeHtml(lead.email)}</p>
+      ${lead.carTitle ? `<p><b>Vehicle:</b> ${escapeHtml(lead.carTitle)}</p>` : ""}
+      ${lead.vin ? `<p><b>VIN:</b> ${escapeHtml(lead.vin)}</p>` : ""}
+      <p><b>Source:</b> ${escapeHtml(lead.source)}</p>
+      <p><b>Message:</b> ${escapeHtml(lead.message)}</p>
     `,
   });
 }
@@ -157,14 +174,29 @@ export async function POST(req: Request) {
 
     await connectDB();
 
+    // A "Request This Vehicle" lead comes from a decoded VIN that isn't in
+    // inventory, so there is no carId to attach — the VIN and the decoded
+    // title are what tell the dealer which vehicle the customer wants.
+    const vin = String(body.vin || "").trim().toUpperCase();
+    const isVinRequest = /^[A-HJ-NPR-Z0-9]{17}$/.test(vin);
+    const allowedSources = ["website", "inventory", "vin", "facebook", "walkin"];
+    const requestedSource = String(body.source || "");
+    const source = allowedSources.includes(requestedSource)
+      ? requestedSource
+      : isVinRequest
+      ? "vin"
+      : "website";
+
     const lead = await Lead.create({
       dealerId: "64f000000000000000000001",
-      carId: body.carId || null,
+      carId: isValidObjectId(body.carId) ? body.carId : null,
+      vin: isVinRequest ? vin : "",
+      carTitle: String(body.carTitle || "").trim(),
       name: body.name,
       phone: body.phone,
       email: body.email || "",
       message: body.message || "",
-      source: body.source || "website",
+      source,
       status: "new",
     });
 
