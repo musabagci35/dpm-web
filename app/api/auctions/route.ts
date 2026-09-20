@@ -32,16 +32,23 @@ export async function GET(req: Request) {
   const titleStatus = searchParams.get("titleStatus");
   if (titleStatus) query.titleStatus = titleStatus;
 
-  const minMileage = Number(searchParams.get("minMileage"));
-  const maxMileage = Number(searchParams.get("maxMileage"));
+  // Number(null) coerces to 0 (not NaN) — parsing an absent param directly
+  // would silently turn "no filter" into "mileage/price must be exactly 0"
+  // and hide every real result. Only parse when the param is actually present.
+  const minMileageParam = searchParams.get("minMileage");
+  const maxMileageParam = searchParams.get("maxMileage");
+  const minMileage = minMileageParam ? Number(minMileageParam) : NaN;
+  const maxMileage = maxMileageParam ? Number(maxMileageParam) : NaN;
   if (Number.isFinite(minMileage) || Number.isFinite(maxMileage)) {
     query.mileage = {};
     if (Number.isFinite(minMileage)) query.mileage.$gte = minMileage;
     if (Number.isFinite(maxMileage)) query.mileage.$lte = maxMileage;
   }
 
-  const minPrice = Number(searchParams.get("minPrice"));
-  const maxPrice = Number(searchParams.get("maxPrice"));
+  const minPriceParam = searchParams.get("minPrice");
+  const maxPriceParam = searchParams.get("maxPrice");
+  const minPrice = minPriceParam ? Number(minPriceParam) : NaN;
+  const maxPrice = maxPriceParam ? Number(maxPriceParam) : NaN;
   if (Number.isFinite(minPrice) || Number.isFinite(maxPrice)) {
     const range: any = {};
     if (Number.isFinite(minPrice)) range.$gte = minPrice;
