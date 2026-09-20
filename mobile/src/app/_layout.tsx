@@ -28,6 +28,7 @@ export default function RootLayout() {
         />
         <Stack.Screen name="auctions/index" options={{ title: "Auctions" }} />
         <Stack.Screen name="auctions/[id]" options={{ title: "Auction" }} />
+        <Stack.Screen name="marketing/[type]/[id]" options={{ title: "Marketing Center" }} />
       </Stack>
     </>
   );
