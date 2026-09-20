@@ -23,6 +23,10 @@ export default function AdminStackLayout() {
       />
       <Stack.Screen name="add-vehicle" options={{ title: "Add Vehicle" }} />
       <Stack.Screen
+        name="scan-vin"
+        options={{ title: "Scan VIN", headerShown: false }}
+      />
+      <Stack.Screen
         name="edit-vehicle/[id]"
         options={{ title: "Edit Vehicle" }}
       />

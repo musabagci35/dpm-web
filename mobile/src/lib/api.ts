@@ -569,6 +569,28 @@ export async function lookupVin(vinValue: string): Promise<VinLookupResult> {
   };
 }
 
+/**
+ * Sends a captured photo to the shared vision-OCR endpoint and returns a
+ * candidate VIN string for the caller to confirm or correct — never
+ * auto-applied without confirmation, and never used to infer anything
+ * beyond the VIN text itself (no mileage, title, or history comes from
+ * this call). Shared by the public Sell flow (seller session) and Admin →
+ * Add Vehicle (admin session); the caller must already be signed in as
+ * one or the other, since this endpoint is gated to control OpenAI usage.
+ */
+export async function scanVinFromPhoto(imageBase64: string): Promise<string> {
+  const data = await requestJson(`${API_BASE_URL}/api/vin-scan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ imageBase64 }),
+  });
+  if (!data?.success || !data?.vin) {
+    throw new ApiError(data?.error || "Could not read a VIN from that photo.");
+  }
+  return data.vin as string;
+}
+
 /* ------------------------------------------------------------------ *
  * Leads
  * ------------------------------------------------------------------ */

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import PhotoManager from "@/components/PhotoManager";
 import VehicleVideoField from "@/components/admin/VehicleVideoField";
+import VinDecodeButton, { DecodedVinData } from "@/components/admin/VinDecodeButton";
+import VinDecodedInfoPanel from "@/components/VinDecodedInfoPanel";
+import { resolveVinFieldUpdates } from "@/lib/vinFieldMerge";
 
 type Img = {
   url: string;
@@ -22,6 +25,7 @@ export default function EditCarPage() {
   const [images, setImages] = useState<Img[]>([]);
   const [assistant, setAssistant] = useState<any>(null);
   const [assistantLoading, setAssistantLoading] = useState(false);
+  const [decodedInfo, setDecodedInfo] = useState<DecodedVinData | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -37,6 +41,26 @@ export default function EditCarPage() {
       }
     })();
   }, [id]);
+
+  function handleDecoded(data: DecodedVinData) {
+    setDecodedInfo(data);
+
+    const updates = resolveVinFieldUpdates([
+      { key: "year", label: "Year", current: String(car.year || ""), decoded: data.year || "" },
+      { key: "make", label: "Make", current: car.make || "", decoded: data.make || "" },
+      { key: "model", label: "Model", current: car.model || "", decoded: data.model || "" },
+      { key: "trim", label: "Trim", current: car.trim || "", decoded: data.trim || "" },
+      { key: "bodyClass", label: "Body Class", current: car.bodyClass || "", decoded: data.body || "" },
+      { key: "engine", label: "Engine", current: car.engine || "", decoded: data.engine || "" },
+      { key: "transmission", label: "Transmission", current: car.transmission || "", decoded: data.transmission || "" },
+      { key: "drivetrain", label: "Drive Type", current: car.drivetrain || "", decoded: data.driveType || "" },
+      { key: "fuelType", label: "Fuel Type", current: car.fuelType || "", decoded: data.fuel || "" },
+    ]);
+
+    if (Object.keys(updates).length > 0) {
+      setCar({ ...car, ...updates });
+    }
+  }
 
   async function runDealerAssistant() {
     try {
@@ -279,12 +303,17 @@ export default function EditCarPage() {
             placeholder="Title"
           />
 
-          <input
-            value={car.vin || ""}
-            readOnly
-            className="rounded-xl border bg-gray-100 p-3"
-            placeholder="VIN"
-          />
+          <div className="flex gap-2">
+            <input
+              value={car.vin || ""}
+              readOnly
+              className="w-full rounded-xl border bg-gray-100 p-3"
+              placeholder="VIN"
+            />
+            {car.vin && (
+              <VinDecodeButton vin={car.vin} onDecoded={handleDecoded} />
+            )}
+          </div>
 <select
   value={car.titleStatus || "unknown"}
   onChange={(e) =>
@@ -321,6 +350,95 @@ export default function EditCarPage() {
             placeholder="Mileage"
           />
         </div>
+
+        {decodedInfo && (
+          <VinDecodedInfoPanel
+            className="mt-6"
+            fields={{
+              year: decodedInfo.year,
+              make: decodedInfo.make,
+              model: decodedInfo.model,
+              trim: decodedInfo.trim,
+              body: decodedInfo.body,
+              engine: decodedInfo.engine,
+              transmission: decodedInfo.transmission,
+              fuel: decodedInfo.fuel,
+              driveType: decodedInfo.driveType,
+              manufacturer: decodedInfo.manufacturer,
+              plantCountry: decodedInfo.plantCountry,
+              plantState: decodedInfo.plantState,
+              plantCity: decodedInfo.plantCity,
+              source: decodedInfo.source,
+              decodedAt: decodedInfo.decodedAt,
+              cached: decodedInfo.cached,
+            }}
+          />
+        )}
+
+        <div className="mt-6 rounded-2xl border bg-gray-50 p-5">
+          <h2 className="mb-4 text-xl font-black">Vehicle Identity</h2>
+
+          <div className="grid gap-4 md:grid-cols-4">
+            <input
+              value={car.year || ""}
+              onChange={(e) => setCar({ ...car, year: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Year"
+            />
+            <input
+              value={car.make || ""}
+              onChange={(e) => setCar({ ...car, make: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Make"
+            />
+            <input
+              value={car.model || ""}
+              onChange={(e) => setCar({ ...car, model: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Model"
+            />
+            <input
+              value={car.trim || ""}
+              onChange={(e) => setCar({ ...car, trim: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Trim"
+            />
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <input
+              value={car.bodyClass || ""}
+              onChange={(e) => setCar({ ...car, bodyClass: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Body Class"
+            />
+            <input
+              value={car.engine || ""}
+              onChange={(e) => setCar({ ...car, engine: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Engine"
+            />
+            <input
+              value={car.transmission || ""}
+              onChange={(e) => setCar({ ...car, transmission: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Transmission"
+            />
+            <input
+              value={car.drivetrain || ""}
+              onChange={(e) => setCar({ ...car, drivetrain: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Drive Type"
+            />
+            <input
+              value={car.fuelType || ""}
+              onChange={(e) => setCar({ ...car, fuelType: e.target.value })}
+              className="rounded-xl border bg-white p-3"
+              placeholder="Fuel Type"
+            />
+          </div>
+        </div>
+
         <div className="mt-6 rounded-2xl border bg-gray-50 p-5">
   <h2 className="mb-4 text-xl font-black">🏁 Auction Information</h2>
 

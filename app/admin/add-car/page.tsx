@@ -3,93 +3,81 @@
 import { useState } from "react";
 import PhotoManager from "@/components/PhotoManager";
 import VehicleVideoField from "@/components/admin/VehicleVideoField";
+import VinDecodeButton, { DecodedVinData } from "@/components/admin/VinDecodeButton";
+import VinDecodedInfoPanel from "@/components/VinDecodedInfoPanel";
+import { resolveVinFieldUpdates } from "@/lib/vinFieldMerge";
 
 export default function AddCar() {
   const [loading, setLoading] = useState(false);
-  const [vinLoading, setVinLoading] = useState(false);
   const [images, setImages] = useState<any[]>([]);
   const [status, setStatus] = useState("available");
   const [isFeatured, setIsFeatured] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [vin, setVin] = useState("");
+  const [decodedInfo, setDecodedInfo] = useState<DecodedVinData | null>(null);
 
-  async function decodeVin() {
-    const vinInput =
-      document.querySelector<HTMLInputElement>('input[name="vin"]');
+  function handleDecoded(data: DecodedVinData) {
+    setDecodedInfo(data);
 
-    const vin = vinInput?.value.trim();
+    const form = document.querySelector("form") as HTMLFormElement;
+    if (!form) return;
 
-    if (!vin || vin.length !== 17) {
-      alert("Please enter a valid 17-character VIN");
-      return;
-    }
+    const field = (name: string) =>
+      form.elements.namedItem(name) as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | null;
 
-    setVinLoading(true);
+    const yearInput = field("year");
+    const makeInput = field("make");
+    const modelInput = field("model");
+    const trimInput = field("trim");
+    const bodyClassInput = field("bodyClass");
+    const engineInput = field("engine");
+    const transmissionInput = field("transmission");
+    const drivetrainInput = field("drivetrain");
+    const fuelTypeInput = field("fuelType");
+    const titleInput = field("title");
+    const descriptionInput = field("description") as HTMLTextAreaElement | null;
 
-    try {
-      const res = await fetch("/api/vin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ vin }),
-      });
+    const derivedTitle = `${data.year || ""} ${data.make || ""} ${data.model || ""}`
+      .replace(/\s+/g, " ")
+      .trim();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "VIN decode failed");
-        return;
-      }
-
-      const form = document.querySelector("form") as HTMLFormElement;
-
-      const yearInput = form.elements.namedItem(
-        "year"
-      ) as HTMLInputElement | null;
-
-      const makeInput = form.elements.namedItem(
-        "make"
-      ) as HTMLInputElement | null;
-
-      const modelInput = form.elements.namedItem(
-        "model"
-      ) as HTMLInputElement | null;
-
-      const titleInput = form.elements.namedItem(
-        "title"
-      ) as HTMLInputElement | null;
-
-      const descriptionInput = form.elements.namedItem(
-        "description"
-      ) as HTMLTextAreaElement | null;
-
-      if (yearInput) yearInput.value = data.year || "";
-      if (makeInput) makeInput.value = data.make || "";
-      if (modelInput) modelInput.value = data.model || "";
-
-      if (titleInput) {
-        titleInput.value =
-          `${data.year || ""} ${data.make || ""} ${data.model || ""}`.trim();
-      }
-
-      if (descriptionInput) {
-        descriptionInput.value = `
-${data.year || ""} ${data.make || ""} ${data.model || ""}
+    const derivedDescription = `${derivedTitle}
 
 Engine: ${data.engine || "N/A"}
 Fuel: ${data.fuel || "N/A"}
 Body Style: ${data.body || "N/A"}
 
 This vehicle is available now at Drive Prime Motors.
-Contact us today to schedule a test drive or financing options.
-        `.trim();
-      }
-    } catch (error) {
-      console.error(error);
-      alert("VIN decode failed");
-    } finally {
-      setVinLoading(false);
-    }
+Contact us today to schedule a test drive or financing options.`.trim();
+
+    const updates = resolveVinFieldUpdates([
+      { key: "year", label: "Year", current: yearInput?.value || "", decoded: data.year || "" },
+      { key: "make", label: "Make", current: makeInput?.value || "", decoded: data.make || "" },
+      { key: "model", label: "Model", current: modelInput?.value || "", decoded: data.model || "" },
+      { key: "trim", label: "Trim", current: trimInput?.value || "", decoded: data.trim || "" },
+      { key: "bodyClass", label: "Body Class", current: bodyClassInput?.value || "", decoded: data.body || "" },
+      { key: "engine", label: "Engine", current: engineInput?.value || "", decoded: data.engine || "" },
+      { key: "transmission", label: "Transmission", current: transmissionInput?.value || "", decoded: data.transmission || "" },
+      { key: "drivetrain", label: "Drive Type", current: drivetrainInput?.value || "", decoded: data.driveType || "" },
+      { key: "fuelType", label: "Fuel Type", current: fuelTypeInput?.value || "", decoded: data.fuel || "" },
+      { key: "title", label: "Title", current: titleInput?.value || "", decoded: derivedTitle },
+      { key: "description", label: "Description", current: descriptionInput?.value || "", decoded: derivedDescription },
+    ]);
+
+    if (updates.year && yearInput) yearInput.value = updates.year;
+    if (updates.make && makeInput) makeInput.value = updates.make;
+    if (updates.model && modelInput) modelInput.value = updates.model;
+    if (updates.trim && trimInput) trimInput.value = updates.trim;
+    if (updates.bodyClass && bodyClassInput) bodyClassInput.value = updates.bodyClass;
+    if (updates.engine && engineInput) engineInput.value = updates.engine;
+    if (updates.transmission && transmissionInput) transmissionInput.value = updates.transmission;
+    if (updates.drivetrain && drivetrainInput) drivetrainInput.value = updates.drivetrain;
+    if (updates.fuelType && fuelTypeInput) fuelTypeInput.value = updates.fuelType;
+    if (updates.title && titleInput) titleInput.value = updates.title;
+    if (updates.description && descriptionInput) descriptionInput.value = updates.description;
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -98,23 +86,29 @@ Contact us today to schedule a test drive or financing options.
     setLoading(true);
 
     const form = e.currentTarget;
-const formData = new FormData(form);
+    const formData = new FormData(form);
 
-const payload = {
-  title: String(formData.get("title") || ""),
-  vin: String(formData.get("vin") || ""),
-  price: Number(formData.get("price") || 0),
-  year: Number(formData.get("year") || 0),
-  make: String(formData.get("make") || ""),
-  model: String(formData.get("model") || ""),
-  mileage: Number(formData.get("mileage") || 0),
-  titleStatus: String(formData.get("titleStatus") || "unknown"),
-  description: String(formData.get("description") || ""),
-  videoUrl,
-  images,
-  status,
-  isFeatured,
-};
+    const payload = {
+      title: String(formData.get("title") || ""),
+      vin: String(formData.get("vin") || ""),
+      price: Number(formData.get("price") || 0),
+      year: Number(formData.get("year") || 0),
+      make: String(formData.get("make") || ""),
+      model: String(formData.get("model") || ""),
+      trim: String(formData.get("trim") || ""),
+      bodyClass: String(formData.get("bodyClass") || ""),
+      engine: String(formData.get("engine") || ""),
+      transmission: String(formData.get("transmission") || ""),
+      drivetrain: String(formData.get("drivetrain") || ""),
+      fuelType: String(formData.get("fuelType") || ""),
+      mileage: Number(formData.get("mileage") || 0),
+      titleStatus: String(formData.get("titleStatus") || "unknown"),
+      description: String(formData.get("description") || ""),
+      videoUrl,
+      images,
+      status,
+      isFeatured,
+    };
 
     try {
       const res = await fetch("/api/admin/cars", {
@@ -135,6 +129,8 @@ const payload = {
         setStatus("available");
         setIsFeatured(false);
         setVideoUrl("");
+        setVin("");
+        setDecodedInfo(null);
       } else {
         alert(result.error || "Error");
       }
@@ -151,21 +147,41 @@ const payload = {
       <h1 className="mb-6 text-3xl font-black text-gray-900">Add Vehicle</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             name="vin"
             placeholder="VIN"
+            maxLength={17}
+            value={vin}
+            onChange={(e) => setVin(e.target.value.toUpperCase())}
             className="border p-2 w-full"
           />
 
-          <button
-            type="button"
-            onClick={decodeVin}
-            className="bg-blue-600 text-white px-4 rounded"
-          >
-            {vinLoading ? "Decoding..." : "Decode VIN"}
-          </button>
+          <VinDecodeButton vin={vin} onDecoded={handleDecoded} />
         </div>
+
+        {decodedInfo && (
+          <VinDecodedInfoPanel
+            fields={{
+              year: decodedInfo.year,
+              make: decodedInfo.make,
+              model: decodedInfo.model,
+              trim: decodedInfo.trim,
+              body: decodedInfo.body,
+              engine: decodedInfo.engine,
+              transmission: decodedInfo.transmission,
+              fuel: decodedInfo.fuel,
+              driveType: decodedInfo.driveType,
+              manufacturer: decodedInfo.manufacturer,
+              plantCountry: decodedInfo.plantCountry,
+              plantState: decodedInfo.plantState,
+              plantCity: decodedInfo.plantCity,
+              source: decodedInfo.source,
+              decodedAt: decodedInfo.decodedAt,
+              cached: decodedInfo.cached,
+            }}
+          />
+        )}
 
         <input
           name="title"
@@ -180,12 +196,20 @@ const payload = {
           className="border p-2 w-full"
         />
 
-        <input
-          name="year"
-          type="number"
-          placeholder="Year"
-          className="border p-2 w-full"
-        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <input
+            name="year"
+            type="number"
+            placeholder="Year"
+            className="border p-2 w-full"
+          />
+
+          <input
+            name="trim"
+            placeholder="Trim"
+            className="border p-2 w-full"
+          />
+        </div>
 
         <input
           name="make"
@@ -205,6 +229,34 @@ const payload = {
           placeholder="Mileage"
           className="border p-2 w-full"
         />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <input
+            name="bodyClass"
+            placeholder="Body Class"
+            className="border p-2 w-full"
+          />
+          <input
+            name="engine"
+            placeholder="Engine"
+            className="border p-2 w-full"
+          />
+          <input
+            name="transmission"
+            placeholder="Transmission"
+            className="border p-2 w-full"
+          />
+          <input
+            name="drivetrain"
+            placeholder="Drive Type"
+            className="border p-2 w-full"
+          />
+          <input
+            name="fuelType"
+            placeholder="Fuel Type"
+            className="border p-2 w-full"
+          />
+        </div>
 
         <select name="titleStatus" className="border p-2 w-full">
           <option value="clean">Clean Title</option>

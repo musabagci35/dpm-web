@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { router } from "expo-router";
+import { useCallback, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 import {
   ActivityIndicator,
@@ -19,6 +19,7 @@ import VehicleFieldsForm, {
   VehicleFormState,
 } from "@/components/admin/VehicleFieldsForm";
 import { createAdminCar, getCloudinarySignature, lookupVin, VehicleImage, VinLookupResult } from "@/lib/api";
+import { consumePendingScannedVin } from "@/lib/scanVinBridge";
 import { uploadDocumentToCloudinary } from "@/lib/upload";
 
 const REPORT_FOLDER = "drive-prime-motors/vehicle-history-reports";
@@ -66,8 +67,21 @@ export default function AddVehicleScreen() {
     }
   }
 
-  async function handleDecode() {
-    const value = vin.replace(/[^a-z0-9]/gi, "").toUpperCase();
+  // Picks up a VIN just confirmed on the shared scan screen and decodes it
+  // immediately — the scan screen already had the admin confirm/correct it,
+  // so no second confirmation step is needed here.
+  useFocusEffect(
+    useCallback(() => {
+      const scanned = consumePendingScannedVin();
+      if (scanned) {
+        handleDecode(scanned);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+  );
+
+  async function handleDecode(overrideVin?: string) {
+    const value = (overrideVin ?? vin).replace(/[^a-z0-9]/gi, "").toUpperCase();
     setError(null);
     setMessage(null);
 
@@ -75,6 +89,8 @@ export default function AddVehicleScreen() {
       setError("Enter a valid 17-character VIN.");
       return;
     }
+
+    if (overrideVin) setVin(value);
 
     setVinLoading(true);
     try {
@@ -174,13 +190,36 @@ export default function AddVehicleScreen() {
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Decode by VIN</Text>
           <Text style={styles.cardSubtitle}>
             Optional, but recommended — decoding fills in year, make, model, trim
             and specifications automatically.
           </Text>
+
+          <TouchableOpacity
+            style={styles.scanButton}
+            onPress={() => router.push("/admin/scan-vin")}
+            accessibilityRole="button"
+          >
+            <Text style={styles.scanButtonIcon}>📷</Text>
+            <Text style={styles.scanButtonText}>Scan VIN with Camera</Text>
+          </TouchableOpacity>
+          <Text style={styles.scanHint}>
+            Works on a windshield etching, door-jamb sticker, or a printed title document.
+          </Text>
+
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>OR ENTER MANUALLY</Text>
+            <View style={styles.orLine} />
+          </View>
 
           <View style={styles.inlineRow}>
             <TextInput
@@ -191,10 +230,11 @@ export default function AddVehicleScreen() {
               onChangeText={(value) => setVin(value.toUpperCase())}
               autoCapitalize="characters"
               autoCorrect={false}
+              maxLength={17}
             />
             <TouchableOpacity
               style={[styles.smallButton, vinLoading && styles.buttonDisabled]}
-              onPress={handleDecode}
+              onPress={() => handleDecode()}
               disabled={vinLoading}
             >
               {vinLoading ? (
@@ -310,7 +350,19 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 16, fontWeight: "900", color: "#111827" },
   cardSubtitle: { color: "#6b7280", fontSize: 13, lineHeight: 19, marginTop: 5, marginBottom: 12 },
-  orRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 10 },
+  scanButton: {
+    flexDirection: "row",
+    backgroundColor: "#111827",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  scanButtonIcon: { fontSize: 18 },
+  scanButtonText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  scanHint: { color: "#9ca3af", fontSize: 11, textAlign: "center", marginTop: 8 },
+  orRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 14 },
   orLine: { flex: 1, height: 1, backgroundColor: "#e5e7eb" },
   orText: { color: "#9ca3af", fontSize: 10, fontWeight: "800", letterSpacing: 1 },
   inlineRow: { flexDirection: "row", gap: 8, alignItems: "stretch" },

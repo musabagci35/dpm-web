@@ -21,6 +21,10 @@ export default function SellStackLayout() {
       />
       <Stack.Screen name="my-listings" options={{ title: "My Listings" }} />
       <Stack.Screen name="new" options={{ title: "List Your Vehicle" }} />
+      <Stack.Screen
+        name="scan-vin"
+        options={{ title: "Scan VIN", headerShown: false }}
+      />
       <Stack.Screen name="listing/[id]" options={{ title: "Your Listing" }} />
       <Stack.Screen name="auction/new" options={{ title: "Create Auction" }} />
       <Stack.Screen name="auction/[id]" options={{ title: "Your Auction" }} />
