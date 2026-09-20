@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 
-import PhotoManager from "@/components/shared/PhotoManager";
+import PhotoManager from "@/components/admin/PhotoManager";
 import VideoManager from "@/components/marketplace/VideoManager";
 import { lookupVin, VehicleImage, VinRecall } from "@/lib/api";
 import { createAuction } from "@/lib/auctionApi";
