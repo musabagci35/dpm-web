@@ -15,9 +15,12 @@ import {
 
 import ContactForm from "@/components/ContactForm";
 import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
+import ShareRow from "@/components/shared/ShareRow";
 import { fetchVehicle, VehicleDetail } from "@/lib/api";
-import { DEALER_PHONE, DEALER_PHONE_DISPLAY } from "@/lib/constants";
+import { DEALER_PHONE, DEALER_PHONE_DISPLAY, DEALER_LOCATION } from "@/lib/constants";
+import { WEB_BASE_URL } from "@/lib/share";
 import {
+  coverImageUrl,
   formatMileage,
   formatPrice,
   formatSoldDate,
@@ -197,6 +200,20 @@ export default function VehicleDetailScreen() {
             </TouchableOpacity>
           </>
         ) : null}
+
+        <ShareRow
+          vehicle={{
+            year: vehicle.year,
+            make: vehicle.make,
+            model: vehicle.model,
+            trim: vehicle.trim,
+            mileage: vehicle.mileage,
+            price: vehicle.price,
+            location: DEALER_LOCATION,
+            photoUrl: coverImageUrl(vehicle.images) || undefined,
+            url: `${WEB_BASE_URL}/inventory/${encodeURIComponent(vehicle.slug)}`,
+          }}
+        />
 
         <View style={styles.reportSection}>
           <VehicleHistoryReportButton

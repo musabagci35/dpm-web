@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 
@@ -9,6 +10,9 @@ import {
   titleStatusLabel,
   vehicleTitle,
 } from "@/lib/format";
+import { WEB_BASE_URL } from "@/lib/share";
+import { DEALER_LOCATION } from "@/lib/constants";
+import ShareVehicleModal from "@/components/shared/ShareVehicleModal";
 
 type CardVehicle = {
   _id: string;
@@ -52,8 +56,22 @@ export default function VehicleCard({
   ].filter((chip): chip is string => Boolean(chip && chip.trim()));
 
   const soldDate = isSold ? formatSoldDate(vehicle.soldAt) : null;
+  const [sharePreviewOpen, setSharePreviewOpen] = useState(false);
+
+  const shareableVehicle = {
+    year: vehicle.year,
+    make: vehicle.make,
+    model: vehicle.model,
+    trim: vehicle.trim,
+    mileage: vehicle.mileage,
+    price: vehicle.price,
+    location: DEALER_LOCATION,
+    photoUrl: image || undefined,
+    url: `${WEB_BASE_URL}/inventory/${encodeURIComponent(vehicle.slug)}`,
+  };
 
   return (
+    <>
     <Link href={`/vehicle/${encodeURIComponent(vehicle.slug)}`} asChild>
       <Pressable
         style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -86,6 +104,16 @@ export default function VehicleCard({
               <Text style={styles.photoCountText}>{photoCount} photos</Text>
             </View>
           ) : null}
+
+          <Pressable
+            onPress={() => setSharePreviewOpen(true)}
+            style={styles.shareButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Share ${title}`}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.shareButtonText}>⤴</Text>
+          </Pressable>
         </View>
 
         <View style={styles.body}>
@@ -134,6 +162,12 @@ export default function VehicleCard({
         </View>
       </Pressable>
     </Link>
+    <ShareVehicleModal
+      visible={sharePreviewOpen}
+      vehicle={shareableVehicle}
+      onClose={() => setSharePreviewOpen(false)}
+    />
+    </>
   );
 }
 
@@ -172,6 +206,18 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   photoCountText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  shareButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(17,24,39,0.78)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shareButtonText: { color: "#fff", fontSize: 15, fontWeight: "900" },
   body: { padding: 14 },
   title: { fontSize: 16, fontWeight: "800", color: "#111827", lineHeight: 21 },
   metaRow: { flexDirection: "row", gap: 5, marginTop: 5, flexWrap: "wrap" },
