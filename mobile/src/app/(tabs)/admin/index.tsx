@@ -20,6 +20,7 @@ import {
 import {
   AdminUser,
   adminLogout,
+  adminLogoutAll,
   getStoredAdminSession,
   verifyAdminSession,
 } from "@/lib/auth";
@@ -155,6 +156,22 @@ export default function AdminDashboardScreen() {
     router.replace("/admin/login");
   }
 
+  function confirmLogoutAll() {
+    Alert.alert(
+      "Log out everywhere",
+      "This signs out every device and disables Face ID / Touch ID sign-in until you enable it again. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Log Out Everywhere", style: "destructive", onPress: handleLogoutAll },
+      ]
+    );
+  }
+
+  async function handleLogoutAll() {
+    await adminLogoutAll();
+    router.replace("/admin/login");
+  }
+
   if (checking || !user) {
     return (
       <View style={styles.centered}>
@@ -281,6 +298,9 @@ export default function AdminDashboardScreen() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={confirmLogoutAll} accessibilityRole="button">
+        <Text style={styles.logoutAllText}>Log Out Everywhere</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -332,4 +352,5 @@ const styles = StyleSheet.create({
   deleteButtonText: { color: "#b91c1c", fontWeight: "800", fontSize: 12 },
   logoutButton: { marginTop: 20, backgroundColor: "#111827", borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   logoutText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  logoutAllText: { color: "#b91c1c", fontWeight: "700", fontSize: 12, textAlign: "center", marginTop: 12 },
 });
