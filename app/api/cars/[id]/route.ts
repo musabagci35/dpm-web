@@ -38,6 +38,14 @@ const updateSchema = z.object({
     .enum(["clean", "salvage", "rebuilt", "title_pending", "parts_only", "unknown"])
     .optional(),
   carfaxUrl: z.string().optional(),
+  vehicleHistoryReport: z
+    .object({
+      url: z.string().optional().default(""),
+      source: z.enum(["carfax", "seller_provided", "other"]).optional().default("other"),
+      reportDate: z.string().optional(),
+      approved: z.boolean().optional(),
+    })
+    .optional(),
   images: z.array(imageSchema).optional(),
   cost: z.coerce.number().min(0).optional(),
   recon: z.coerce.number().min(0).optional(),
@@ -104,6 +112,19 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     }
 
     const data: any = parsed.data;
+
+    // Admin has full control over a Car's report — it's dealer inventory,
+    // never seller-submitted, so every report here is admin-verified.
+    if (data.vehicleHistoryReport) {
+      const report = data.vehicleHistoryReport;
+      data.vehicleHistoryReport = {
+        url: report.url || "",
+        source: report.source || "other",
+        reportDate: report.reportDate ? new Date(report.reportDate) : null,
+        sellerProvided: false,
+        approved: report.url ? report.approved !== false : true,
+      };
+    }
 
     if (data.status === "sold" || data.status === "archived") {
       data.isActive = false;

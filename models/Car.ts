@@ -1,4 +1,5 @@
 import mongoose, { Schema, models, model } from "mongoose";
+import { VehicleHistoryReportSchema } from "./VehicleHistoryReport";
 
 const ImageSchema = new Schema(
   {
@@ -83,7 +84,9 @@ const CarSchema = new Schema(
     videoUrl: { type: String, trim: true, default: "" },
     phone: { type: String, trim: true, default: "" },
     /** Optional link to a real third-party CARFAX report — never generated or inferred. */
+    /** @deprecated superseded by vehicleHistoryReport below; kept for backward compatibility. */
     carfaxUrl: { type: String, trim: true, default: "" },
+    vehicleHistoryReport: { type: VehicleHistoryReportSchema, default: () => ({}) },
 
     images: [ImageSchema],
 

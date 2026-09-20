@@ -18,6 +18,7 @@ import VehicleFieldsForm, {
   TitleStatus,
   VehicleFormState,
 } from "@/components/admin/VehicleFieldsForm";
+import VehicleHistoryReportEditor, { AdminVehicleHistoryReport } from "@/components/admin/VehicleHistoryReportEditor";
 import {
   AdminVehicle,
   deleteAdminCar,
@@ -43,7 +44,6 @@ function toFormState(car: AdminVehicle): VehicleFormState {
     titleStatus: ((car.titleStatus as TitleStatus) || "unknown") as TitleStatus,
     phone: car.phone || "",
     description: car.description || "",
-    carfaxUrl: car.carfaxUrl || "",
     status: (car.status as VehicleFormState["status"]) || "available",
   };
 }
@@ -56,7 +56,9 @@ export default function EditVehicleScreen() {
   const [vin, setVin] = useState("");
   const [form, setForm] = useState<VehicleFormState>(emptyVehicleForm);
   const [images, setImages] = useState<VehicleImage[]>([]);
+  const [vehicleHistoryReport, setVehicleHistoryReport] = useState<AdminVehicleHistoryReport>(null);
   const [saving, setSaving] = useState(false);
+  const [reportSaving, setReportSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +73,7 @@ export default function EditVehicleScreen() {
       setVin(car.vin || "");
       setForm(toFormState(car));
       setImages(car.images || []);
+      setVehicleHistoryReport((car as any).vehicleHistoryReport || null);
     } catch (err) {
       setLoadError(
         err instanceof Error ? err.message : "Could not load this vehicle."
@@ -125,7 +128,6 @@ export default function EditVehicleScreen() {
         titleStatus: form.titleStatus,
         description: form.description.trim(),
         phone: form.phone.trim(),
-        carfaxUrl: form.carfaxUrl.trim(),
         engine: form.engine.trim(),
         fuelType: form.fuel.trim(),
         bodyClass: form.bodyStyle.trim(),
@@ -139,6 +141,34 @@ export default function EditVehicleScreen() {
       setError(err instanceof Error ? err.message : "Could not save changes.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveReport(input: { url: string; source: "carfax" | "other"; reportDate?: string; approved: boolean }) {
+    if (!id) return;
+    setError(null);
+    setReportSaving(true);
+    try {
+      await updateAdminCar(id, { vehicleHistoryReport: input });
+      setVehicleHistoryReport({ url: input.url, source: input.source, reportDate: input.reportDate || null, approved: input.approved });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save the vehicle history report.");
+    } finally {
+      setReportSaving(false);
+    }
+  }
+
+  async function handleRemoveReport() {
+    if (!id) return;
+    setError(null);
+    setReportSaving(true);
+    try {
+      await updateAdminCar(id, { vehicleHistoryReport: { url: "", source: "other", approved: true } });
+      setVehicleHistoryReport(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not remove the report.");
+    } finally {
+      setReportSaving(false);
     }
   }
 
@@ -208,6 +238,16 @@ export default function EditVehicleScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Photos</Text>
           <PhotoManager images={images} onChange={setImages} />
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Vehicle History Report</Text>
+          <VehicleHistoryReportEditor
+            report={vehicleHistoryReport}
+            onSave={handleSaveReport}
+            onRemove={handleRemoveReport}
+            busy={reportSaving}
+          />
         </View>
 
         {message && <Text style={styles.success}>{message}</Text>}

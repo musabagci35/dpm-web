@@ -14,6 +14,7 @@ import {
 } from "react-native";
 
 import ContactForm from "@/components/ContactForm";
+import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
 import { fetchVehicle, VehicleDetail } from "@/lib/api";
 import { DEALER_PHONE, DEALER_PHONE_DISPLAY } from "@/lib/constants";
 import {
@@ -237,17 +238,13 @@ export default function VehicleDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
-        {/* Only ever a real, dealer-entered link — this app never generates
-            or infers a CARFAX report from the VIN. */}
-        {vehicle.carfaxUrl && /^https?:\/\//i.test(vehicle.carfaxUrl) ? (
-          <TouchableOpacity
-            style={styles.carfaxButton}
-            onPress={() => Linking.openURL(vehicle.carfaxUrl as string)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.carfaxButtonText}>View CARFAX Report</Text>
-          </TouchableOpacity>
-        ) : null}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeading}>Vehicle History Report</Text>
+          <VehicleHistoryReportButton
+            report={vehicle.vehicleHistoryReport}
+            onRequestReport={() => Linking.openURL(`tel:${DEALER_PHONE}`)}
+          />
+        </View>
 
         {isSold ? (
           <View style={styles.soldNotice}>
@@ -397,15 +394,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   videoButtonText: { color: "#b91c1c", fontWeight: "800" },
-
-  carfaxButton: {
-    marginTop: 12,
-    backgroundColor: "#111827",
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: "center",
-  },
-  carfaxButtonText: { color: "#fff", fontWeight: "800" },
 
   soldNotice: {
     marginTop: 24,

@@ -25,6 +25,8 @@ export default function AddVehicleScreen() {
   const [vinLookup, setVinLookup] = useState<VinLookupResult | null>(null);
   const [form, setForm] = useState<VehicleFormState>(emptyVehicleForm);
   const [images, setImages] = useState<VehicleImage[]>([]);
+  const [reportUrl, setReportUrl] = useState("");
+  const [reportSource, setReportSource] = useState<"carfax" | "other">("carfax");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +118,6 @@ export default function AddVehicleScreen() {
         titleStatus: form.titleStatus,
         description: form.description.trim(),
         phone: form.phone.trim(),
-        carfaxUrl: form.carfaxUrl.trim(),
         engine: form.engine.trim(),
         fuelType: form.fuel.trim(),
         bodyClass: form.bodyStyle.trim(),
@@ -124,6 +125,9 @@ export default function AddVehicleScreen() {
         drivetrain: form.drivetrain.trim(),
         status: form.status,
         images,
+        vehicleHistoryReport: reportUrl.trim()
+          ? { url: reportUrl.trim(), source: reportSource, approved: true }
+          : undefined,
       });
       setMessage("Vehicle saved to the live inventory.");
       router.replace(`/admin/edit-vehicle/${created._id}`);
@@ -183,6 +187,38 @@ export default function AddVehicleScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Vehicle details</Text>
           <VehicleFieldsForm value={form} onChange={setField} />
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Vehicle History Report (optional)</Text>
+          <Text style={styles.cardSubtitle}>
+            Only ever a real, verified report link — this is never generated or inferred from the
+            VIN. Leave blank if none exists yet; the public listing will show "Report not
+            uploaded yet" until one is added.
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="https://... (real CARFAX or history report link)"
+            placeholderTextColor="#9ca3af"
+            value={reportUrl}
+            onChangeText={setReportUrl}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+          />
+          <View style={styles.reportSourceRow}>
+            {(["carfax", "other"] as const).map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[styles.reportSourcePill, reportSource === option && styles.reportSourcePillSelected]}
+                onPress={() => setReportSource(option)}
+              >
+                <Text style={[styles.reportSourcePillText, reportSource === option && styles.reportSourcePillTextSelected]}>
+                  {option === "carfax" ? "CARFAX (verified)" : "Other / Dealer-provided"}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <View style={styles.card}>
@@ -246,6 +282,11 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   lookupText: { color: "#1d4ed8", fontSize: 12, marginTop: 10 },
+  reportSourceRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  reportSourcePill: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 9, paddingVertical: 8, paddingHorizontal: 11 },
+  reportSourcePillSelected: { backgroundColor: "#111827", borderColor: "#111827" },
+  reportSourcePillText: { color: "#374151", fontSize: 11, fontWeight: "700" },
+  reportSourcePillTextSelected: { color: "#fff" },
   success: { color: "#15803d", fontSize: 13, marginBottom: 10, fontWeight: "600" },
   error: { color: "#b91c1c", fontSize: 13, marginBottom: 10, fontWeight: "600" },
   primaryButton: {

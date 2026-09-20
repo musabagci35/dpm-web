@@ -24,8 +24,6 @@ export type VehicleFormState = {
   titleStatus: TitleStatus;
   phone: string;
   description: string;
-  /** Optional link to a real third-party CARFAX report — never generated. */
-  carfaxUrl: string;
   status: "available" | "pending" | "sold" | "archived";
 };
 
@@ -44,7 +42,6 @@ export const emptyVehicleForm: VehicleFormState = {
   titleStatus: "unknown",
   phone: "",
   description: "",
-  carfaxUrl: "",
   status: "available",
 };
 
@@ -191,15 +188,6 @@ export default function VehicleFieldsForm({
         onChangeText={(v) => onChange({ description: v })}
         multiline
       />
-      <Field
-        placeholder="CARFAX report URL (optional)"
-        value={value.carfaxUrl}
-        onChangeText={(v) => onChange({ carfaxUrl: v })}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="url"
-      />
-
       <Text style={styles.sectionLabel}>Status</Text>
       <View style={styles.statusRow}>
         {STATUSES.map((status) => (

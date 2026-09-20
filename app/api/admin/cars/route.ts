@@ -74,6 +74,21 @@ export async function POST(req: Request) {
 
     const status = body.status || "available";
 
+    // Admin has full control over a Car's report — it's dealer inventory,
+    // never seller-submitted, so every report set here is admin-verified.
+    const reportInput = body.vehicleHistoryReport || {};
+    const vehicleHistoryReport = reportInput.url
+      ? {
+          url: String(reportInput.url || ""),
+          source: ["carfax", "seller_provided", "other"].includes(reportInput.source)
+            ? reportInput.source
+            : "other",
+          reportDate: reportInput.reportDate ? new Date(reportInput.reportDate) : null,
+          sellerProvided: false,
+          approved: reportInput.approved !== false,
+        }
+      : undefined;
+
     const baseSlug = makeSlug(body);
     let finalSlug = baseSlug;
     let count = 1;
@@ -102,6 +117,7 @@ export async function POST(req: Request) {
       videoUrl: body.videoUrl || "",
       phone: body.phone || "",
       carfaxUrl: body.carfaxUrl || "",
+      ...(vehicleHistoryReport ? { vehicleHistoryReport } : {}),
       images,
       status,
       isActive: status === "sold" || status === "archived" ? false : true,

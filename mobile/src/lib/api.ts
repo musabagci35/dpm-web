@@ -29,6 +29,13 @@ export type VehicleImage = {
 };
 
 /**
+ * Shared shape for a vehicle-history report across inventory, marketplace
+ * listings, and auctions — null unless an admin-verified (or admin-approved
+ * seller-provided) report actually exists. Never generated or inferred.
+ */
+export type VehicleHistoryReportInfo = { url: string; source: string; reportDate: string | null } | null;
+
+/**
  * Matches the public field contract returned by /api/public/inventory,
  * /api/public/inventory/:slug and /api/public/recently-sold. The server strips
  * cost/profit/ROI, the full VIN and admin notes before this ever reaches the
@@ -55,8 +62,10 @@ export type VehicleSummary = {
   bodyClass?: string;
   location?: string;
   videoUrl?: string;
-  /** Only ever a real, dealer-entered CARFAX link — never generated from the VIN. */
+  /** @deprecated superseded by vehicleHistoryReport. */
   carfaxUrl?: string;
+  /** Null unless an admin-verified (or admin-approved seller) report exists. Never generated or inferred. */
+  vehicleHistoryReport?: VehicleHistoryReportInfo;
   vinLast6?: string;
   /** "vin-decode" when a blank dealer spec was filled from the NHTSA decode. */
   specsSource?: "dealer" | "vin-decode";
@@ -606,6 +615,7 @@ export type AdminCarInput = {
   bodyClass?: string;
   titleStatus?: "clean" | "salvage" | "rebuilt" | "title_pending" | "unknown";
   carfaxUrl?: string;
+  vehicleHistoryReport?: { url: string; source: "carfax" | "seller_provided" | "other"; reportDate?: string; approved?: boolean };
   status?: "available" | "pending" | "sold" | "archived";
   images?: VehicleImage[];
 };

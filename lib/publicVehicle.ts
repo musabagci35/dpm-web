@@ -1,4 +1,5 @@
 import { getCachedVinDecode, getVinDecodeResult } from "@/lib/vinDecode";
+import { hasPublicVehicleHistoryReport } from "@/models/VehicleHistoryReport";
 
 /**
  * The only Car fields any public (unauthenticated) endpoint is allowed to
@@ -29,6 +30,7 @@ export const PUBLIC_CAR_FIELDS = [
   "videoUrl",
   "vin",
   "carfaxUrl",
+  "vehicleHistoryReport",
   "updatedAt",
 ].join(" ");
 
@@ -58,8 +60,10 @@ export type PublicVehicle = {
   bodyClass: string;
   location: string;
   videoUrl: string;
-  /** Only ever a dealer-entered real CARFAX link — never generated or inferred. */
+  /** @deprecated superseded by vehicleHistoryReport. */
   carfaxUrl: string;
+  /** Null unless an admin-verified (or admin-approved seller) report exists. Never generated or inferred. */
+  vehicleHistoryReport: { url: string; source: string; reportDate: string | null } | null;
   /** Last 6 characters of the VIN only — the full VIN is never published. */
   vinLast6: string;
   /**
@@ -115,6 +119,15 @@ export function toPublicVehicle(car: any): PublicVehicle {
     location: text(car?.location),
     videoUrl: text(car?.videoUrl),
     carfaxUrl: text(car?.carfaxUrl),
+    vehicleHistoryReport: hasPublicVehicleHistoryReport(car?.vehicleHistoryReport)
+      ? {
+          url: car.vehicleHistoryReport.url,
+          source: car.vehicleHistoryReport.source,
+          reportDate: car.vehicleHistoryReport.reportDate
+            ? new Date(car.vehicleHistoryReport.reportDate).toISOString()
+            : null,
+        }
+      : null,
     vinLast6: vin.length === 17 ? vin.slice(-6) : "",
     specsSource: "dealer",
     updatedAt: car?.updatedAt ? new Date(car.updatedAt).toISOString() : undefined,

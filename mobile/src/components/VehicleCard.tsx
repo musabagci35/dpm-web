@@ -27,6 +27,7 @@ type CardVehicle = {
   fuelType?: string;
   titleStatus?: string;
   soldAt?: string;
+  vehicleHistoryReport?: { url: string; source: string; reportDate: string | null } | null;
 };
 
 export default function VehicleCard({
@@ -111,6 +112,14 @@ export default function VehicleCard({
             </View>
           ) : null}
 
+          {vehicle.vehicleHistoryReport?.url ? (
+            <View style={styles.reportChip}>
+              <Text style={styles.reportChipText}>
+                {vehicle.vehicleHistoryReport.source === "carfax" ? "✓ CARFAX Report" : "✓ History Report"}
+              </Text>
+            </View>
+          ) : null}
+
           <View style={styles.footer}>
             {isSold ? (
               <Text style={styles.soldLabel}>No longer available</Text>
@@ -176,6 +185,8 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
   },
   chipText: { fontSize: 11, color: "#374151", fontWeight: "700" },
+  reportChip: { alignSelf: "flex-start", marginTop: 8 },
+  reportChipText: { fontSize: 11, color: "#15803d", fontWeight: "800" },
   footer: {
     flexDirection: "row",
     alignItems: "center",

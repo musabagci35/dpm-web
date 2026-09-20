@@ -52,6 +52,18 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   if ("videoUrl" in body) update.videoUrl = body.videoUrl || "";
   if ("phone" in body) update.phone = body.phone || "";
   if ("carfaxUrl" in body) update.carfaxUrl = body.carfaxUrl || "";
+  if ("vehicleHistoryReport" in body) {
+    // Admin has full control over a Car's report — it's dealer inventory,
+    // never seller-submitted, so every report here is admin-verified.
+    const report = body.vehicleHistoryReport || {};
+    update.vehicleHistoryReport = {
+      url: String(report.url || ""),
+      source: ["carfax", "seller_provided", "other"].includes(report.source) ? report.source : "other",
+      reportDate: report.reportDate ? new Date(report.reportDate) : null,
+      sellerProvided: false,
+      approved: report.url ? report.approved !== false : true,
+    };
+  }
   if ("isActive" in body) update.isActive = body.isActive;
   if ("status" in body) update.status = body.status;
   if ("isFeatured" in body) update.isFeatured = Boolean(body.isFeatured);
