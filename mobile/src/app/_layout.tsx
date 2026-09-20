@@ -26,6 +26,8 @@ export default function RootLayout() {
           name="marketplace/checkout-result"
           options={{ title: "Checkout", headerShown: false }}
         />
+        <Stack.Screen name="auctions/index" options={{ title: "Auctions" }} />
+        <Stack.Screen name="auctions/[id]" options={{ title: "Auction" }} />
       </Stack>
     </>
   );

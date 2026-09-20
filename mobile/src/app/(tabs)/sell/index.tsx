@@ -48,8 +48,12 @@ export default function SellHubScreen() {
     setRefreshing(false);
   }
 
-  function handleListYourVehicle() {
+  function handleListForSale() {
     router.push(seller ? "/sell/new" : "/sell/login");
+  }
+
+  function handleStartAuction() {
+    router.push(seller ? "/sell/auction/new" : "/sell/login");
   }
 
   return (
@@ -66,13 +70,20 @@ export default function SellHubScreen() {
             <Text style={styles.heroTitle}>Sell My Car</Text>
             <Text style={styles.heroSubtitle}>
               List your own vehicle for buyers to find — a $49 listing fee keeps it live for 30
-              days, with an optional $99 featured upgrade. This is separate from Drive Prime
-              Motors&apos; own dealer inventory.
+              days, with an optional $99 featured upgrade — or start an auction and let buyers bid.
+              This is separate from Drive Prime Motors&apos; own dealer inventory.
             </Text>
 
-            <TouchableOpacity style={styles.primaryButton} onPress={handleListYourVehicle}>
-              <Text style={styles.primaryButtonText}>List Your Vehicle</Text>
-            </TouchableOpacity>
+            <View style={styles.choiceRow}>
+              <TouchableOpacity style={styles.choiceCard} onPress={handleListForSale} accessibilityRole="button">
+                <Text style={styles.choiceCardTitle}>List for Sale</Text>
+                <Text style={styles.choiceCardSubtitle}>Set a fixed price, buyers contact you</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.choiceCard, styles.choiceCardAuction]} onPress={handleStartAuction} accessibilityRole="button">
+                <Text style={styles.choiceCardTitle}>Create Auction</Text>
+                <Text style={styles.choiceCardSubtitle}>Set a starting bid, buyers compete</Text>
+              </TouchableOpacity>
+            </View>
 
             {seller ? (
               <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push("/sell/my-listings")}>
@@ -161,8 +172,11 @@ const styles = StyleSheet.create({
   heroEyebrow: { color: "#fca5a5", fontWeight: "900", fontSize: 11, letterSpacing: 1 },
   heroTitle: { color: "#fff", fontSize: 26, fontWeight: "900", marginTop: 8 },
   heroSubtitle: { color: "#d1d5db", fontSize: 13, lineHeight: 19, marginTop: 8 },
-  primaryButton: { backgroundColor: "#dc2626", borderRadius: 12, paddingVertical: 15, alignItems: "center", marginTop: 16 },
-  primaryButtonText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  choiceRow: { flexDirection: "row", gap: 10, marginTop: 16 },
+  choiceCard: { flex: 1, backgroundColor: "#dc2626", borderRadius: 12, paddingVertical: 15, paddingHorizontal: 10, alignItems: "center" },
+  choiceCardAuction: { backgroundColor: "#1d4ed8" },
+  choiceCardTitle: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  choiceCardSubtitle: { color: "#e5e7eb", fontSize: 10, marginTop: 4, textAlign: "center" },
   secondaryButton: { borderWidth: 1, borderColor: "#374151", borderRadius: 12, paddingVertical: 13, alignItems: "center", marginTop: 10 },
   secondaryButtonText: { color: "#fff", fontWeight: "800", fontSize: 13 },
 

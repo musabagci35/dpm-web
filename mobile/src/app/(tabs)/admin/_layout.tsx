@@ -29,6 +29,14 @@ export default function AdminStackLayout() {
         name="marketplace-listing/[id]"
         options={{ title: "Review Listing" }}
       />
+      <Stack.Screen
+        name="auction-listings"
+        options={{ title: "Auction Moderation" }}
+      />
+      <Stack.Screen
+        name="auction-listing/[id]"
+        options={{ title: "Review Auction" }}
+      />
     </Stack>
   );
 }

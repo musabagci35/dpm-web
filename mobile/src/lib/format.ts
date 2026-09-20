@@ -65,3 +65,26 @@ export function formatSoldDate(value?: string): string | null {
     year: "numeric",
   });
 }
+
+/** "2d 4h left" / "45m left" / "Ending soon" / "Ended" — never invented, always computed from the real endsAt. */
+export function formatTimeRemaining(endsAt?: string | null): string {
+  if (!endsAt) return "";
+  const ms = new Date(endsAt).getTime() - Date.now();
+  if (Number.isNaN(ms)) return "";
+  if (ms <= 0) return "Ended";
+
+  const minutes = Math.floor(ms / 60000);
+  const days = Math.floor(minutes / (60 * 24));
+  const hours = Math.floor((minutes % (60 * 24)) / 60);
+  const mins = minutes % 60;
+
+  if (days > 0) return `${days}d ${hours}h left`;
+  if (hours > 0) return `${hours}h ${mins}m left`;
+  if (minutes > 2) return `${minutes}m left`;
+  return "Ending soon";
+}
+
+export function formatBidAmount(amount?: number | null): string {
+  if (amount == null) return "No bids yet";
+  return `$${amount.toLocaleString()}`;
+}

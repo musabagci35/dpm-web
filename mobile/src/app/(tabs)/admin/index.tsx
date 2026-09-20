@@ -203,6 +203,13 @@ export default function AdminDashboardScreen() {
         <Text style={styles.marketplaceButtonText}>Sell My Car — Marketplace Listings</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.marketplaceButton}
+        onPress={() => router.push("/admin/auction-listings")}
+      >
+        <Text style={styles.marketplaceButtonText}>Auction Moderation — Review Seller Auctions</Text>
+      </TouchableOpacity>
+
       {message && <Text style={styles.success}>{message}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
 
