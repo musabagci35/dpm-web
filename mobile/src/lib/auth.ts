@@ -36,6 +36,25 @@ export class AdminAuthError extends Error {
   }
 }
 
+/**
+ * Lets the tab bar (which decides whether to show the Admin tab at all —
+ * see app/(tabs)/_layout.tsx) react immediately to a login or logout
+ * instead of only picking it up on the next mount/focus check.
+ */
+type AdminAuthListener = (user: AdminUser | null) => void;
+const authListeners = new Set<AdminAuthListener>();
+
+export function subscribeAdminAuthChange(listener: AdminAuthListener): () => void {
+  authListeners.add(listener);
+  return () => {
+    authListeners.delete(listener);
+  };
+}
+
+function notifyAdminAuthChange(user: AdminUser | null) {
+  authListeners.forEach((listener) => listener(user));
+}
+
 async function parseJsonSafe(res: Response): Promise<any> {
   try {
     return await res.json();
@@ -165,6 +184,7 @@ export async function adminLogin(
   }
 
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(user));
+  notifyAdminAuthChange(user);
   return user;
 }
 
@@ -181,6 +201,7 @@ export async function adminLogout(): Promise<void> {
   }
 
   await SecureStore.deleteItemAsync(SESSION_KEY);
+  notifyAdminAuthChange(null);
 }
 
 /** Reads the locally-stored session marker without contacting the server. */

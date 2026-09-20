@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import ContactForm from "@/components/ContactForm";
@@ -56,6 +57,14 @@ export default function ContactScreen() {
         intro="Tell us what you're looking for and we'll get back to you."
         submitLabel="Send Message"
       />
+
+      <TouchableOpacity
+        style={styles.staffLink}
+        onPress={() => router.push("/admin/login")}
+        accessibilityRole="button"
+      >
+        <Text style={styles.staffLinkText}>Staff Sign In</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -99,4 +108,7 @@ const styles = StyleSheet.create({
   cardTitle: { color: "#111827", fontWeight: "900", fontSize: 16, marginBottom: 8 },
   cardLine: { color: "#374151", fontSize: 13, lineHeight: 20 },
   cardEmail: { color: "#b91c1c", fontWeight: "800", fontSize: 13, marginTop: 8 },
+
+  staffLink: { alignItems: "center", marginTop: 24, paddingVertical: 8 },
+  staffLinkText: { color: "#9ca3af", fontSize: 11, fontWeight: "600" },
 });
