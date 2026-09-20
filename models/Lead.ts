@@ -87,12 +87,35 @@ const LeadSchema = new Schema(
       default: null,
     },
 
+    // The real, dedicated appointment date/time — distinct from
+    // followUpDate (a generic sales-pipeline reminder used for leads with
+    // no appointment at all). Only leads with this set are ever eligible
+    // for the 72-hour auto-archive cleanup.
+    appointmentAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
     lastContactedAt: {
       type: Date,
       default: null,
     },
 
     convertedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Soft-hidden from the normal Leads list once its appointment is well
+    // past (see lib/leadCleanup.ts) — never hard-deleted, so the record
+    // stays available for business/reporting purposes.
+    archived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    archivedAt: {
       type: Date,
       default: null,
     },

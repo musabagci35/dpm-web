@@ -76,6 +76,7 @@ export async function POST(req: Request) {
       status: "appointment",
       priority: "hot",
       followUpDate: new Date(data.appointmentDate),
+      appointmentAt: new Date(data.appointmentDate),
     });
 
     return NextResponse.json(

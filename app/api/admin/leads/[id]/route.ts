@@ -19,9 +19,19 @@ export async function PATCH(
 
     await connectDB();
 
+    const update: Record<string, unknown> = {};
+    if (body.status !== undefined) update.status = body.status;
+    if (body.appointmentAt !== undefined) {
+      update.appointmentAt = body.appointmentAt ? new Date(body.appointmentAt) : null;
+    }
+    if (body.archived !== undefined) {
+      update.archived = Boolean(body.archived);
+      update.archivedAt = body.archived ? new Date() : null;
+    }
+
     const updated = await Lead.findByIdAndUpdate(
       id,
-      { $set: { status: body.status } },
+      { $set: update },
       { new: true }
     );
 

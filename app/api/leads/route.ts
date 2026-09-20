@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import Lead from "@/models/Lead";
 import nodemailer from "nodemailer";
 import { getAdminSession } from "@/lib/adminSession";
+import { archiveOverdueAppointmentLeads } from "@/lib/leadCleanup";
 
 // 🔥 BASE URL
 const baseUrl =
@@ -144,7 +145,7 @@ async function autoReplySMS(lead: any) {
 }
 
 // ✅ GET
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getAdminSession();
 
   if (!session) {
@@ -153,7 +154,18 @@ export async function GET() {
 
   try {
     await connectDB();
-    const leads = await Lead.find().sort({ createdAt: -1 });
+
+    // Overdue appointment leads are archived here too, not just by the
+    // daily cron — so an admin reading the list never sees a stale record
+    // just because the cron hasn't run yet.
+    await archiveOverdueAppointmentLeads();
+
+    const { searchParams } = new URL(req.url);
+    const showArchived = searchParams.get("archived") === "true";
+
+    const leads = await Lead.find({ archived: showArchived ? true : { $ne: true } }).sort({
+      createdAt: -1,
+    });
     return NextResponse.json(leads);
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 });

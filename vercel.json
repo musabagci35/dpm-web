@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/archive-leads",
+      "schedule": "0 13 * * *"
+    }
+  ]
+}

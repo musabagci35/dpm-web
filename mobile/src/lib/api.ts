@@ -737,6 +737,10 @@ export type AdminLead = {
   status: LeadStatus;
   priority?: string;
   createdAt: string;
+  /** The real, dedicated appointment date/time — null for leads with no appointment. */
+  appointmentAt?: string | null;
+  archived?: boolean;
+  archivedAt?: string | null;
 };
 
 function normalizeLead(value: any): AdminLead {
@@ -753,11 +757,15 @@ function normalizeLead(value: any): AdminLead {
     status: (str(value?.status) || "new") as LeadStatus,
     priority: str(value?.priority),
     createdAt: str(value?.createdAt),
+    appointmentAt: value?.appointmentAt ? str(value.appointmentAt) : null,
+    archived: Boolean(value?.archived),
+    archivedAt: value?.archivedAt ? str(value.archivedAt) : null,
   };
 }
 
-export async function fetchAdminLeads(): Promise<AdminLead[]> {
-  const data = await requestJson(`${API_BASE_URL}/api/leads`, {
+export async function fetchAdminLeads(options?: { archived?: boolean }): Promise<AdminLead[]> {
+  const qs = options?.archived ? "?archived=true" : "";
+  const data = await requestJson(`${API_BASE_URL}/api/leads${qs}`, {
     credentials: "include",
   });
   const list = Array.isArray(data) ? data : data?.leads;
@@ -775,6 +783,34 @@ export async function updateLeadStatus(
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ status }),
+    }
+  );
+  return normalizeLead(data?.lead || data);
+}
+
+/** Manually archives or restores a lead — never a hard delete. */
+export async function setLeadArchived(id: string, archived: boolean): Promise<AdminLead> {
+  const data = await requestJson(
+    `${API_BASE_URL}/api/admin/leads/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ archived }),
+    }
+  );
+  return normalizeLead(data?.lead || data);
+}
+
+/** Sets or clears a lead's real appointment date/time (ISO string, or null to clear). */
+export async function setLeadAppointment(id: string, appointmentAt: string | null): Promise<AdminLead> {
+  const data = await requestJson(
+    `${API_BASE_URL}/api/admin/leads/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ appointmentAt }),
     }
   );
   return normalizeLead(data?.lead || data);

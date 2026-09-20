@@ -88,3 +88,20 @@ export function formatBidAmount(amount?: number | null): string {
   if (amount == null) return "No bids yet";
   return `$${amount.toLocaleString()}`;
 }
+
+/** Formats an appointment date/time in America/Los_Angeles (dealership) time. */
+export function formatAppointmentAt(value?: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return (
+    date.toLocaleString("en-US", {
+      timeZone: "America/Los_Angeles",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }) + " PT"
+  );
+}
