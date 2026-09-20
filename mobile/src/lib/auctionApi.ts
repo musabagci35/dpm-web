@@ -37,6 +37,7 @@ export type PublicAuction = {
   contactPhone?: string;
   contactEmail?: string;
   contactPreference?: "phone" | "email" | "either";
+  location?: string;
   images: VehicleImage[];
   video: ListingVideo | null;
   vehicleHistoryReport: VehicleHistoryReportInfo;
@@ -55,6 +56,8 @@ export type PublicAuction = {
   status: AuctionStatus;
   isTest?: boolean;
   createdAt?: string;
+  /** Only ever present on the owner/admin's own full-detail fetch — a public fetch never returns a hidden auction at all. */
+  adminHidden?: boolean;
   /** Only ever present on the admin's own full-detail fetch — the owning seller's current account status. */
   sellerStatus?: string;
 };

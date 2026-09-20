@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import AuctionListing from "@/models/AuctionListing";
 
 const SITE_URL = "https://driveprimemotorsllc.com";
 
@@ -16,6 +17,19 @@ export default async function sitemap() {
   const inventory = cars.map((car: any) => ({
     url: `${SITE_URL}/inventory/${car.slug || car._id}`,
     lastModified: car.updatedAt || new Date(),
+  }));
+
+  // Only live, non-admin-hidden, non-flagged auctions — dropped from the
+  // sitemap the instant any of those flips, same as the share/detail page.
+  const auctionListings = await AuctionListing.find({
+    status: "live",
+    adminHidden: { $ne: true },
+    flagged: { $ne: true },
+  }).lean();
+
+  const auctions = auctionListings.map((auction: any) => ({
+    url: `${SITE_URL}/auctions/${auction._id}`,
+    lastModified: auction.updatedAt || new Date(),
   }));
 
   const seoPages = [
@@ -56,5 +70,6 @@ export default async function sitemap() {
     },
     ...seoPages,
     ...inventory,
+    ...auctions,
   ];
 }

@@ -17,9 +17,14 @@ import {
 
 import VideoPlayerCard from "@/components/marketplace/VideoPlayerCard";
 import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
+import ShareRow from "@/components/shared/ShareRow";
 import { fetchAuction, placeBid, PublicAuction, reportAuction, toggleWatchAuction } from "@/lib/auctionApi";
 import { verifySellerSession } from "@/lib/marketplaceAuth";
 import { coverImageUrl, formatBidAmount, formatMileage, formatTimeRemaining, titleStatusLabel, vehicleTitle } from "@/lib/format";
+import { WEB_BASE_URL } from "@/lib/share";
+
+/** The same statuses the public API itself will actually serve — never draft/pending_review/paused, which the seller or admin can still see but a shopper never can. */
+const PUBLIC_STATUSES = new Set(["live", "scheduled", "ended", "sold", "reserve_not_met"]);
 
 const POLL_INTERVAL_MS = 15000;
 
@@ -218,6 +223,7 @@ export default function AuctionDetailScreen() {
         <Text style={styles.meta}>
           {formatMileage(auction.mileage)}
           {titleStatusLabel(auction.titleStatus) ? ` · ${titleStatusLabel(auction.titleStatus)} title` : ""}
+          {auction.location ? ` · ${auction.location}` : ""}
         </Text>
 
         <View style={styles.bidBox}>
@@ -233,6 +239,14 @@ export default function AuctionDetailScreen() {
               {isLive ? <Text style={styles.timeRemaining}>{formatTimeRemaining(auction.endsAt)}</Text> : null}
             </View>
           </View>
+
+          {/* Whether a reserve exists/is met is safe to disclose — the reserve
+              amount itself never is, and toPublicAuctionListing never returns it. */}
+          {auction.hasReserve && isLive ? (
+            <Text style={styles.reserveNote}>
+              {auction.reserveMet ? "✓ Reserve met" : "Reserve not yet met"}
+            </Text>
+          ) : null}
 
           {isLive ? (
             <>
@@ -280,6 +294,22 @@ export default function AuctionDetailScreen() {
             <Text style={styles.contactButtonText}>Contact Seller</Text>
           </TouchableOpacity>
         </View>
+
+        {PUBLIC_STATUSES.has(auction.status) && !auction.adminHidden ? (
+          <ShareRow
+            vehicle={{
+              year: auction.year,
+              make: auction.make,
+              model: auction.model,
+              trim: auction.trim,
+              mileage: auction.mileage,
+              price: auction.currentBid ?? auction.startingBid,
+              location: auction.location,
+              photoUrl: poster || undefined,
+              url: `${WEB_BASE_URL}/auctions/${encodeURIComponent(auction._id)}`,
+            }}
+          />
+        ) : null}
 
         {auction.video ? (
           <View style={styles.section}>
@@ -378,6 +408,7 @@ const styles = StyleSheet.create({
   bidBoxAmount: { color: "#fff", fontSize: 26, fontWeight: "900", marginTop: 4 },
   bidBoxRight: { alignItems: "flex-end" },
   timeRemaining: { color: "#fca5a5", fontWeight: "800", fontSize: 13, marginTop: 6 },
+  reserveNote: { color: "#fcd34d", fontWeight: "700", fontSize: 12, marginTop: 10 },
 
   nextMinLabel: { color: "#d1d5db", fontSize: 12, marginTop: 14 },
   bidInputRow: { flexDirection: "row", gap: 8, marginTop: 8 },

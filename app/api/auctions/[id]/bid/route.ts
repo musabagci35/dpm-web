@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import AuctionListing from "@/models/AuctionListing";
 import { getSellerSession } from "@/lib/sellerSession";
+import { rateLimit } from "@/lib/rateLimit";
 
 /**
  * Places a bid with a single atomic findOneAndUpdate — the match condition
@@ -18,6 +19,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const session = await getSellerSession();
   if (!session) {
     return NextResponse.json({ error: "Sign in to place a bid." }, { status: 401 });
+  }
+
+  const limited = rateLimit(`bid:${session.sellerId}`, 20, 60 * 1000);
+  if (!limited.success) {
+    return NextResponse.json(
+      { error: "Too many bids placed too quickly. Please slow down." },
+      { status: 429 }
+    );
   }
 
   const { id } = await params;

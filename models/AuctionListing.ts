@@ -72,6 +72,8 @@ const AuctionListingSchema = new Schema(
     contactPhone: { type: String, trim: true, default: "" },
     contactEmail: { type: String, trim: true, default: "" },
     contactPreference: { type: String, enum: ["phone", "email", "either"], default: "either" },
+    /** Seller-entered general area (e.g. "Sacramento, CA") — never a street address, and never defaulted to the dealership's own location, since this vehicle isn't Drive Prime Motors' own stock. */
+    location: { type: String, trim: true, default: "" },
 
     images: { type: [ImageSchema], default: [] },
     video: { type: VideoSchema, default: null },
@@ -109,6 +111,15 @@ const AuctionListingSchema = new Schema(
     reviewedAt: { type: Date, default: null },
 
     reports: { type: [ReportSchema], default: [] },
+
+    // Independent of `status` — lets an admin hide one auction (or every
+    // auction a frozen/suspended/deleted seller owns) from public view
+    // without touching the review status underneath it.
+    adminHidden: { type: Boolean, default: false, index: true },
+    adminHiddenReason: { type: String, trim: true, default: "" },
+
+    /** The seller's explicit attestation that they own this vehicle and the auction is accurate — required before submit. */
+    ownershipAttested: { type: Boolean, default: false },
 
     isTest: { type: Boolean, default: false },
   },

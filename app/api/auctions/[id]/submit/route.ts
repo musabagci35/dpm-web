@@ -3,7 +3,9 @@ import mongoose from "mongoose";
 
 import { connectDB } from "@/lib/mongodb";
 import AuctionListing from "@/models/AuctionListing";
+import MarketplaceSeller from "@/models/MarketplaceSeller";
 import { getSellerSession } from "@/lib/sellerSession";
+import { hasVerifiedContact, UNVERIFIED_CONTACT_ERROR } from "@/lib/sellerVerification";
 
 /** Seller submits a completed draft for admin review. No payment step — unlike the fixed-price flow, auctions have no listing fee. */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -22,6 +24,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   if (!auction || String(auction.sellerId) !== String(session.sellerId)) {
     return NextResponse.json({ error: "Auction not found" }, { status: 404 });
+  }
+
+  const seller = await MarketplaceSeller.findById(session.sellerId).select(
+    "emailVerified phoneVerified"
+  );
+  if (!seller || !hasVerifiedContact(seller)) {
+    return NextResponse.json({ error: UNVERIFIED_CONTACT_ERROR }, { status: 403 });
   }
 
   if (!["draft", "rejected"].includes(auction.status)) {
@@ -45,6 +54,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
   if (!auction.images?.length) {
     return NextResponse.json({ error: "Add at least one photo first." }, { status: 400 });
+  }
+  if (!auction.ownershipAttested) {
+    return NextResponse.json(
+      { error: "Confirm that you own this vehicle and the listing is accurate before submitting." },
+      { status: 400 }
+    );
   }
 
   auction.status = "pending_review";

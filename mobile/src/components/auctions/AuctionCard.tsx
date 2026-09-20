@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { PublicAuction } from "@/lib/auctionApi";
 import { coverImageUrl, formatBidAmount, formatMileage, formatTimeRemaining, titleStatusLabel, vehicleTitle } from "@/lib/format";
+import { WEB_BASE_URL } from "@/lib/share";
+import ShareVehicleModal from "@/components/shared/ShareVehicleModal";
 
 const STATUS_LABELS: Record<string, string> = {
   live: "Live",
@@ -23,8 +26,22 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AuctionCard({ auction, compact }: { auction: PublicAuction; compact?: boolean }) {
   const image = coverImageUrl(auction.images);
   const titleLabel = titleStatusLabel(auction.titleStatus);
+  const [sharePreviewOpen, setSharePreviewOpen] = useState(false);
+
+  const shareableVehicle = {
+    year: auction.year,
+    make: auction.make,
+    model: auction.model,
+    trim: auction.trim,
+    mileage: auction.mileage,
+    price: auction.currentBid ?? auction.startingBid,
+    location: auction.location,
+    photoUrl: image || undefined,
+    url: `${WEB_BASE_URL}/auctions/${encodeURIComponent(auction._id)}`,
+  };
 
   return (
+    <>
     <TouchableOpacity
       style={[styles.card, compact && styles.cardCompact]}
       onPress={() => router.push(`/auctions/${auction._id}`)}
@@ -46,6 +63,15 @@ export default function AuctionCard({ auction, compact }: { auction: PublicAucti
             <Text style={styles.timeBadgeText}>{formatTimeRemaining(auction.endsAt)}</Text>
           </View>
         ) : null}
+        <Pressable
+          onPress={() => setSharePreviewOpen(true)}
+          style={styles.shareButton}
+          accessibilityRole="button"
+          accessibilityLabel={`Share ${vehicleTitle(auction)}`}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.shareButtonText}>⤴</Text>
+        </Pressable>
       </View>
 
       <View style={styles.body}>
@@ -93,6 +119,12 @@ export default function AuctionCard({ auction, compact }: { auction: PublicAucti
         </View>
       </View>
     </TouchableOpacity>
+    <ShareVehicleModal
+      visible={sharePreviewOpen}
+      vehicle={shareableVehicle}
+      onClose={() => setSharePreviewOpen(false)}
+    />
+    </>
   );
 }
 
@@ -114,6 +146,18 @@ const styles = StyleSheet.create({
   statusBadgeText: { color: "#fff", fontSize: 10, fontWeight: "900", textTransform: "uppercase" },
   timeBadge: { position: "absolute", bottom: 10, right: 10, backgroundColor: "rgba(17,24,39,0.85)", borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   timeBadgeText: { color: "#fff", fontSize: 10, fontWeight: "800" },
+  shareButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(17,24,39,0.78)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shareButtonText: { color: "#fff", fontSize: 14, fontWeight: "900" },
 
   body: { padding: 12 },
   title: { color: "#111827", fontWeight: "900", fontSize: 14, lineHeight: 18 },

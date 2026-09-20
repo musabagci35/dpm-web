@@ -27,6 +27,8 @@ const EDITABLE_FIELDS = [
   "bidIncrement",
   "buyItNowPrice",
   "durationHours",
+  "ownershipAttested",
+  "location",
 ];
 
 const PUBLIC_STATUSES = ["live", "scheduled", "ended", "sold", "reserve_not_met"];
@@ -55,7 +57,11 @@ export async function GET(_req: Request, { params }: RouteContext) {
     return NextResponse.json({ ...auction, sellerStatus: (seller as any)?.status ?? "unknown" });
   }
 
-  if (PUBLIC_STATUSES.includes((auction as any).status)) {
+  if (
+    PUBLIC_STATUSES.includes((auction as any).status) &&
+    !(auction as any).adminHidden &&
+    !(auction as any).flagged
+  ) {
     return NextResponse.json(toPublicAuctionListing(auction));
   }
 
@@ -108,6 +114,10 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     if ("rejectionReason" in body) update.rejectionReason = String(body.rejectionReason || "");
     if ("flagged" in body) update.flagged = Boolean(body.flagged);
     if ("flagReason" in body) update.flagReason = String(body.flagReason || "");
+    // Pauses/removes this one auction from public view without deleting it
+    // or touching the seller's account.
+    if ("adminHidden" in body) update.adminHidden = Boolean(body.adminHidden);
+    if ("adminHiddenReason" in body) update.adminHiddenReason = String(body.adminHiddenReason || "");
     if ("vehicleHistoryReport" in body) {
       const report = body.vehicleHistoryReport || {};
       update.vehicleHistoryReport = {

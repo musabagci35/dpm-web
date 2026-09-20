@@ -327,6 +327,13 @@ export default function AdminAuctionListingScreen() {
             <TouchableOpacity style={[styles.rejectButton, busy && styles.buttonDisabled]} onPress={handleCancel} disabled={busy}>
               <Text style={styles.rejectButtonText}>Cancel Auction</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.marketingButton}
+              onPress={() => router.push(`/marketing/auction/${auction._id}`)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.marketingButtonText}>📣 Marketing Center</Text>
+            </TouchableOpacity>
           </>
         ) : null}
 
@@ -392,6 +399,8 @@ const styles = StyleSheet.create({
   rejectButtonText: { color: "#b91c1c", fontWeight: "800", fontSize: 14 },
   flagButton: { borderWidth: 1, borderColor: "#fbbf24", borderRadius: 12, paddingVertical: 13, alignItems: "center" },
   flagButtonText: { color: "#92400e", fontWeight: "800", fontSize: 14 },
+  marketingButton: { borderWidth: 1.5, borderColor: "#111827", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 10 },
+  marketingButtonText: { color: "#111827", fontWeight: "800", fontSize: 14 },
   deleteButton: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, paddingVertical: 13, alignItems: "center" },
   deleteButtonText: { color: "#6b7280", fontWeight: "800", fontSize: 14 },
 });

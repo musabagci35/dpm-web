@@ -29,6 +29,7 @@ export function toPublicAuctionListing(auction: any) {
     contactPhone: String(auction.contactPhone || ""),
     contactEmail: String(auction.contactEmail || ""),
     contactPreference: String(auction.contactPreference || "either"),
+    location: String(auction.location || ""),
     images: Array.isArray(auction.images)
       ? auction.images.map((img: any) => ({ url: img.url, publicId: img.publicId || undefined, isCover: Boolean(img.isCover) }))
       : [],

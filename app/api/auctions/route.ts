@@ -5,6 +5,8 @@ import AuctionListing from "@/models/AuctionListing";
 import { getSellerSession } from "@/lib/sellerSession";
 import { toPublicAuctionListing } from "@/lib/publicAuctionListing";
 import { resolveDueAuctions } from "@/lib/resolveAuctionState";
+import { rateLimit } from "@/lib/rateLimit";
+import { isVinAlreadyActive, DUPLICATE_VIN_ERROR } from "@/lib/duplicateVin";
 
 const SORTS: Record<string, any> = {
   ending_soon: { endsAt: 1 },
@@ -21,7 +23,14 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") || "live";
   const allowedStatuses = ["live", "scheduled", "sold", "ended", "reserve_not_met"];
-  const query: any = { status: allowedStatuses.includes(status) ? status : "live" };
+  const query: any = {
+    status: allowedStatuses.includes(status) ? status : "live",
+    adminHidden: { $ne: true },
+    // A flagged auction (admin-flagged, or auto-flagged at 3+ public
+    // reports) drops out of public view pending review — same treatment as
+    // adminHidden, not merely a marker admins happen to see later.
+    flagged: { $ne: true },
+  };
 
   const make = searchParams.get("make");
   if (make) query.make = new RegExp(make.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
@@ -79,8 +88,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sign in to create an auction." }, { status: 401 });
   }
 
+  const limited = rateLimit(`auction-create:${session.sellerId}`, 10, 60 * 60 * 1000);
+  if (!limited.success) {
+    return NextResponse.json(
+      { error: "Too many auctions created recently. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   await connectDB();
   const body = await req.json().catch(() => ({}));
+
+  const vin = String(body.vin || "").trim().toUpperCase();
+  if (vin && (await isVinAlreadyActive(vin))) {
+    return NextResponse.json({ error: DUPLICATE_VIN_ERROR }, { status: 409 });
+  }
 
   const mileage = Number(body.mileage);
   if (!Number.isFinite(mileage) || mileage < 0) {
@@ -123,7 +145,7 @@ export async function POST(req: Request) {
 
   const auction = await AuctionListing.create({
     sellerId: session.sellerId,
-    vin: String(body.vin || "").trim().toUpperCase(),
+    vin,
     year: Number(body.year) || 0,
     make: String(body.make || "").trim(),
     model: String(body.model || "").trim(),
@@ -141,6 +163,7 @@ export async function POST(req: Request) {
     contactPhone: String(body.contactPhone || "").trim(),
     contactEmail: String(body.contactEmail || "").trim(),
     contactPreference: ["phone", "email", "either"].includes(body.contactPreference) ? body.contactPreference : "either",
+    location: String(body.location || "").trim(),
     images,
     video,
     startingBid,
