@@ -55,6 +55,8 @@ export type PublicAuction = {
   status: AuctionStatus;
   isTest?: boolean;
   createdAt?: string;
+  /** Only ever present on the admin's own full-detail fetch — the owning seller's current account status. */
+  sellerStatus?: string;
 };
 
 export type MyAuction = PublicAuction & { rejectionReason?: string };

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 import { connectDB } from "@/lib/mongodb";
 import AuctionListing from "@/models/AuctionListing";
+import MarketplaceSeller from "@/models/MarketplaceSeller";
 import { getSellerSession } from "@/lib/sellerSession";
 import { getAdminSession } from "@/lib/adminSession";
 import { toPublicAuctionListing } from "@/lib/publicAuctionListing";
@@ -47,7 +48,11 @@ export async function GET(_req: Request, { params }: RouteContext) {
   const [sellerSession, adminSession] = await Promise.all([getSellerSession(), getAdminSession()]);
 
   if (adminSession) {
-    return NextResponse.json(auction);
+    // `sellerStatus` rides along so callers (e.g. the Marketing Center) can
+    // tell a frozen/suspended/deleted seller's auction apart from one whose
+    // own status is still "live".
+    const seller = await MarketplaceSeller.findById((auction as any).sellerId).select("status").lean();
+    return NextResponse.json({ ...auction, sellerStatus: (seller as any)?.status ?? "unknown" });
   }
 
   if (PUBLIC_STATUSES.includes((auction as any).status)) {

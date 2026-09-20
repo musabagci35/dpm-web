@@ -43,6 +43,8 @@ export type PublicListing = {
   video: ListingVideo | null;
   status: ListingStatus;
   featured: boolean;
+  /** Only ever present on the admin's own full-detail fetch — the owning seller's current account status. */
+  sellerStatus?: string;
   isTest?: boolean;
   listingExpiresAt?: string | null;
   createdAt?: string;

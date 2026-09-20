@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 import { connectDB } from "@/lib/mongodb";
 import MarketplaceListing from "@/models/MarketplaceListing";
+import MarketplaceSeller from "@/models/MarketplaceSeller";
 import { getSellerSession } from "@/lib/sellerSession";
 import { getAdminSession } from "@/lib/adminSession";
 import { toPublicListing } from "@/lib/publicMarketplaceListing";
@@ -45,9 +46,12 @@ export async function GET(_req: Request, { params }: RouteContext) {
 
   // An admin always gets full detail (seller info, payment, reports),
   // regardless of status — moderating a live listing needs the same
-  // information as moderating a pending one.
+  // information as moderating a pending one. `sellerStatus` rides along so
+  // callers (e.g. the Marketing Center) can tell a frozen/suspended/deleted
+  // seller's listing apart from one whose own status is still "live".
   if (adminSession) {
-    return NextResponse.json(listing);
+    const seller = await MarketplaceSeller.findById((listing as any).sellerId).select("status").lean();
+    return NextResponse.json({ ...listing, sellerStatus: (seller as any)?.status ?? "unknown" });
   }
 
   if ((listing as any).status === "live" && !(listing as any).adminHidden) {

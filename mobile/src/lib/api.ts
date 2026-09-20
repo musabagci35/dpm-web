@@ -70,6 +70,8 @@ export type VehicleSummary = {
   /** "vin-decode" when a blank dealer spec was filled from the NHTSA decode. */
   specsSource?: "dealer" | "vin-decode";
   soldAt?: string;
+  /** false = admin has soft-hidden this vehicle from the public site without changing its status. */
+  isActive?: boolean;
 };
 
 export type VehicleDetail = VehicleSummary;
