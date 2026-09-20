@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, VehicleImage } from "./api";
+import { API_BASE_URL, ApiError, VehicleHistoryReportInfo, VehicleImage } from "./api";
 
 export type TitleStatus = "clean" | "salvage" | "rebuilt" | "title_pending" | "unknown";
 export type ListingStatus =
@@ -39,10 +39,14 @@ export type PublicListing = {
   contactPhone?: string;
   contactEmail?: string;
   contactPreference?: "phone" | "email" | "either";
+  location?: string;
   images: VehicleImage[];
   video: ListingVideo | null;
+  vehicleHistoryReport?: VehicleHistoryReportInfo;
   status: ListingStatus;
   featured: boolean;
+  /** Only ever present on the owner/admin's own full-detail fetch — a public fetch never returns a hidden listing at all. */
+  adminHidden?: boolean;
   /** Only ever present on the admin's own full-detail fetch — the owning seller's current account status. */
   sellerStatus?: string;
   isTest?: boolean;
@@ -153,6 +157,8 @@ export type ListingInput = {
   images?: VehicleImage[];
   video?: ListingVideo | null;
   isTest?: boolean;
+  /** Seller-submitted only — server always forces source:"seller_provided", approved:false. */
+  vehicleHistoryReportUrl?: string;
 };
 
 export async function createListing(input: ListingInput): Promise<MyListing> {
@@ -263,6 +269,7 @@ export type ModerationInput = Partial<ListingInput> & {
   rejectionReason?: string;
   flagged?: boolean;
   flagReason?: string;
+  vehicleHistoryReport?: { url: string; source: "carfax" | "seller_provided" | "other"; reportDate?: string; approved?: boolean };
 };
 
 /**
@@ -278,3 +285,4 @@ export async function moderateListing(id: string, input: ModerationInput): Promi
   });
   return normalizeListing(data) as AdminListing;
 }
+

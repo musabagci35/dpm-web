@@ -1,3 +1,5 @@
+import { hasPublicVehicleHistoryReport } from "@/models/VehicleHistoryReport";
+
 /**
  * The only MarketplaceListing fields any public (unauthenticated) endpoint
  * may return. Payment internals (Stripe ids/amounts), moderation notes,
@@ -27,6 +29,7 @@ export function toPublicListing(listing: any) {
     contactPhone: String(listing.contactPhone || ""),
     contactEmail: String(listing.contactEmail || ""),
     contactPreference: String(listing.contactPreference || "either"),
+    location: String(listing.location || ""),
     images: Array.isArray(listing.images)
       ? listing.images.map((img: any) => ({
           url: img.url,
@@ -39,6 +42,15 @@ export function toPublicListing(listing: any) {
           url: listing.video.url,
           thumbnailUrl: listing.video.thumbnailUrl || "",
           durationMs: Number(listing.video.durationMs) || 0,
+        }
+      : null,
+    vehicleHistoryReport: hasPublicVehicleHistoryReport(listing.vehicleHistoryReport)
+      ? {
+          url: listing.vehicleHistoryReport.url,
+          source: listing.vehicleHistoryReport.source,
+          reportDate: listing.vehicleHistoryReport.reportDate
+            ? new Date(listing.vehicleHistoryReport.reportDate).toISOString()
+            : null,
         }
       : null,
     status: String(listing.status || "draft"),

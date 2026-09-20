@@ -16,6 +16,7 @@ import {
 
 import PhotoManager from "@/components/admin/PhotoManager";
 import VideoManager from "@/components/marketplace/VideoManager";
+import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
 import { VehicleImage } from "@/lib/api";
 import {
   deleteListing,
@@ -65,6 +66,7 @@ export default function SellerListingScreen() {
   const [contactPreference, setContactPreference] = useState<"phone" | "email" | "either">("either");
   const [images, setImages] = useState<VehicleImage[]>([]);
   const [video, setVideo] = useState<ListingVideo | null>(null);
+  const [reportUrl, setReportUrl] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -87,6 +89,7 @@ export default function SellerListingScreen() {
       setContactPreference(data.contactPreference || "either");
       setImages(data.images || []);
       setVideo(data.video || null);
+      setReportUrl(data.vehicleHistoryReport?.url || "");
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Could not load this listing.");
     }
@@ -145,6 +148,7 @@ export default function SellerListingScreen() {
         contactPreference,
         images,
         video,
+        vehicleHistoryReportUrl: reportUrl.trim(),
       });
       setListing(updated);
       setMessage("Changes saved.");
@@ -232,7 +236,12 @@ export default function SellerListingScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         <View style={styles.statusCard}>
           <Text style={styles.statusLabel}>{STATUS_LABELS[listing.status] || listing.status}</Text>
           <Text style={styles.statusTitle}>{vehicleTitle(listing)}</Text>
@@ -310,6 +319,26 @@ export default function SellerListingScreen() {
               <VideoManager video={video} onChange={setVideo} />
             </View>
 
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Vehicle history report (optional)</Text>
+              <Text style={styles.reportHint}>
+                Have a CARFAX or similar report? Paste the link — an admin will review and approve
+                it before it&apos;s shown to buyers.
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="https://..."
+                value={reportUrl}
+                onChangeText={setReportUrl}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholderTextColor="#9ca3af"
+              />
+              {listing.vehicleHistoryReport?.url && !(listing as any).vehicleHistoryReport?.approved ? (
+                <Text style={styles.reportPending}>Awaiting admin approval.</Text>
+              ) : null}
+            </View>
+
             {message && <Text style={styles.success}>{message}</Text>}
             {error && <Text style={styles.error}>{error}</Text>}
 
@@ -330,6 +359,14 @@ export default function SellerListingScreen() {
         ) : (
           <>
             {error && <Text style={styles.error}>{error}</Text>}
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Vehicle History Report</Text>
+              <VehicleHistoryReportButton
+                report={listing.vehicleHistoryReport}
+                onRequestReport={() => Alert.alert("Contact us", "Reach out to Drive Prime Motors to request a report.")}
+              />
+            </View>
 
             {listing.status === "live" && !listing.featured ? (
               <TouchableOpacity style={[styles.primaryButton, featuring && styles.buttonDisabled]} onPress={handleFeature} disabled={featuring}>
@@ -372,6 +409,8 @@ const styles = StyleSheet.create({
   pillSelected: { backgroundColor: "#111827", borderColor: "#111827" },
   pillText: { color: "#374151", fontSize: 12, fontWeight: "700" },
   pillTextSelected: { color: "#fff" },
+  reportHint: { color: "#6b7280", fontSize: 12, lineHeight: 17, marginBottom: 10 },
+  reportPending: { color: "#b45309", fontSize: 12, fontWeight: "700", marginTop: 6 },
 
   success: { color: "#15803d", fontSize: 13, marginBottom: 10, fontWeight: "600" },
   error: { color: "#b91c1c", fontSize: 13, marginBottom: 10, fontWeight: "600" },

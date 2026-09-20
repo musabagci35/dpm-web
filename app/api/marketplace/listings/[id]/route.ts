@@ -23,6 +23,8 @@ const EDITABLE_FIELDS = [
   "contactPreference",
   "images",
   "video",
+  "ownershipAttested",
+  "location",
 ];
 
 export async function GET(_req: Request, { params }: RouteContext) {
@@ -111,6 +113,20 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     if ("rejectionReason" in body) update.rejectionReason = String(body.rejectionReason || "");
     if ("flagged" in body) update.flagged = Boolean(body.flagged);
     if ("flagReason" in body) update.flagReason = String(body.flagReason || "");
+    // Pauses/removes this one listing from public view without deleting it
+    // or touching the seller's account.
+    if ("adminHidden" in body) update.adminHidden = Boolean(body.adminHidden);
+    if ("adminHiddenReason" in body) update.adminHiddenReason = String(body.adminHiddenReason || "");
+    if ("vehicleHistoryReport" in body) {
+      const report = body.vehicleHistoryReport || {};
+      update.vehicleHistoryReport = {
+        url: String(report.url || ""),
+        source: ["carfax", "seller_provided", "other"].includes(report.source) ? report.source : "other",
+        reportDate: report.reportDate ? new Date(report.reportDate) : null,
+        sellerProvided: false,
+        approved: report.url ? report.approved !== false : true,
+      };
+    }
   } else if (isOwner) {
     // A seller may only edit their own listing while it hasn't been
     // submitted for review or is bounced back as rejected — never while
@@ -124,6 +140,18 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     }
     for (const key of EDITABLE_FIELDS) {
       if (key in body) update[key] = body[key];
+    }
+    if ("vehicleHistoryReportUrl" in body) {
+      // A seller can only ever produce an unapproved, self-attributed
+      // report — never "carfax", and never pre-approved. Only an admin can
+      // mark a report verified.
+      update.vehicleHistoryReport = {
+        url: String(body.vehicleHistoryReportUrl || ""),
+        source: "seller_provided",
+        reportDate: null,
+        sellerProvided: true,
+        approved: false,
+      };
     }
     // Editing a rejected listing puts it back in draft so the seller can
     // resubmit it through the normal payment → review flow.

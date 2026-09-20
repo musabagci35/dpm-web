@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -14,6 +15,8 @@ import {
 import { fetchPublicListings, PublicListing } from "@/lib/marketplaceApi";
 import { SellerUser, verifySellerSession } from "@/lib/marketplaceAuth";
 import { coverImageUrl, formatMileage, formatPrice, titleStatusLabel, vehicleTitle } from "@/lib/format";
+import { WEB_BASE_URL } from "@/lib/share";
+import ShareVehicleModal from "@/components/shared/ShareVehicleModal";
 
 export default function SellHubScreen() {
   const [seller, setSeller] = useState<SellerUser | null>(null);
@@ -126,8 +129,21 @@ export default function SellHubScreen() {
 function ListingCard({ listing }: { listing: PublicListing }) {
   const image = coverImageUrl(listing.images);
   const titleLabel = titleStatusLabel(listing.titleStatus);
+  const [sharePreviewOpen, setSharePreviewOpen] = useState(false);
+
+  const shareableVehicle = {
+    year: listing.year,
+    make: listing.make,
+    model: listing.model,
+    trim: listing.trim,
+    mileage: listing.mileage,
+    price: listing.price,
+    photoUrl: image || undefined,
+    url: `${WEB_BASE_URL}/marketplace/${encodeURIComponent(listing._id)}`,
+  };
 
   return (
+    <>
     <TouchableOpacity
       style={styles.card}
       onPress={() => router.push(`/marketplace/${listing._id}`)}
@@ -149,6 +165,15 @@ function ListingCard({ listing }: { listing: PublicListing }) {
             <Text style={styles.featuredBadgeText}>Featured</Text>
           </View>
         ) : null}
+        <Pressable
+          onPress={() => setSharePreviewOpen(true)}
+          style={styles.cardShareButton}
+          accessibilityRole="button"
+          accessibilityLabel={`Share ${vehicleTitle(listing)}`}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.cardShareButtonText}>⤴</Text>
+        </Pressable>
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={2}>
@@ -161,6 +186,12 @@ function ListingCard({ listing }: { listing: PublicListing }) {
         <Text style={styles.cardPrice}>{formatPrice(listing.price)}</Text>
       </View>
     </TouchableOpacity>
+    <ShareVehicleModal
+      visible={sharePreviewOpen}
+      vehicle={shareableVehicle}
+      onClose={() => setSharePreviewOpen(false)}
+    />
+    </>
   );
 }
 
@@ -195,6 +226,18 @@ const styles = StyleSheet.create({
   privateSellerBadgeText: { color: "#fff", fontSize: 9, fontWeight: "800" },
   featuredBadge: { position: "absolute", top: 6, left: 6, backgroundColor: "#dc2626", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
   featuredBadgeText: { color: "#fff", fontSize: 9, fontWeight: "900" },
+  cardShareButton: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "rgba(17,24,39,0.78)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardShareButtonText: { color: "#fff", fontSize: 13, fontWeight: "900" },
   cardBody: { flex: 1, padding: 10, justifyContent: "center" },
   cardTitle: { color: "#111827", fontWeight: "800", fontSize: 14 },
   cardMeta: { color: "#6b7280", fontSize: 11, marginTop: 4 },

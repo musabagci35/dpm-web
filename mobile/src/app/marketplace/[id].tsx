@@ -15,8 +15,11 @@ import {
 } from "react-native";
 
 import VideoPlayerCard from "@/components/marketplace/VideoPlayerCard";
+import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
+import ShareRow from "@/components/shared/ShareRow";
 import { fetchListing, PublicListing, reportListing } from "@/lib/marketplaceApi";
 import { coverImageUrl, formatMileage, formatPrice, titleStatusLabel, vehicleTitle } from "@/lib/format";
+import { WEB_BASE_URL } from "@/lib/share";
 
 const REPORT_REASONS: { value: "suspicious" | "inaccurate" | "spam" | "already_sold" | "other"; label: string }[] = [
   { value: "suspicious", label: "Suspicious listing" },
@@ -176,6 +179,21 @@ export default function MarketplaceListingScreen() {
           <Text style={styles.contactButtonText}>Contact Seller</Text>
         </TouchableOpacity>
 
+        {listing.status === "live" && !listing.adminHidden ? (
+          <ShareRow
+            vehicle={{
+              year: listing.year,
+              make: listing.make,
+              model: listing.model,
+              trim: listing.trim,
+              mileage: listing.mileage,
+              price: listing.price,
+              photoUrl: poster || undefined,
+              url: `${WEB_BASE_URL}/marketplace/${encodeURIComponent(listing._id)}`,
+            }}
+          />
+        ) : null}
+
         {listing.video ? (
           <View style={styles.section}>
             <Text style={styles.sectionHeading}>Video</Text>
@@ -208,6 +226,11 @@ export default function MarketplaceListingScreen() {
             <Text style={styles.description}>{listing.description}</Text>
           </View>
         ) : null}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionHeading}>Vehicle History Report</Text>
+          <VehicleHistoryReportButton report={listing.vehicleHistoryReport} onRequestReport={handleContactSeller} />
+        </View>
 
         <View style={styles.disclosure}>
           <Text style={styles.disclosureText}>

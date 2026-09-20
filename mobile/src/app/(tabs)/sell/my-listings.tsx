@@ -159,6 +159,15 @@ export default function MyListingsScreen() {
               {row.item.status === "rejected" && row.item.rejectionReason ? (
                 <Text style={styles.rejectionText}>Reason: {row.item.rejectionReason}</Text>
               ) : null}
+              {row.item.status === "live" ? (
+                <TouchableOpacity
+                  style={styles.marketingButton}
+                  onPress={() => router.push(`/marketing/listing/${row.item._id}`)}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.marketingButtonText}>📣 Marketing Center</Text>
+                </TouchableOpacity>
+              ) : null}
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -216,4 +225,6 @@ const styles = StyleSheet.create({
   statusBadgeText: { color: "#fff", fontSize: 10, fontWeight: "900" },
   cardMeta: { color: "#6b7280", fontSize: 12, marginTop: 6 },
   rejectionText: { color: "#b91c1c", fontSize: 12, marginTop: 6, fontWeight: "600" },
+  marketingButton: { marginTop: 10, borderWidth: 1.5, borderColor: "#111827", borderRadius: 10, paddingVertical: 10, alignItems: "center" },
+  marketingButtonText: { color: "#111827", fontWeight: "800", fontSize: 12 },
 });

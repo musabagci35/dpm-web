@@ -1,4 +1,5 @@
 import mongoose, { Schema, models, model } from "mongoose";
+import { VehicleHistoryReportSchema } from "./VehicleHistoryReport";
 
 /**
  * A private-seller "Sell My Car" marketplace listing. Deliberately its own
@@ -95,9 +96,12 @@ const MarketplaceListingSchema = new Schema(
       enum: ["phone", "email", "either"],
       default: "either",
     },
+    /** Seller-entered general area (e.g. "Sacramento, CA") — never a street address, and never defaulted to the dealership's own location, since this vehicle isn't Drive Prime Motors' own stock. */
+    location: { type: String, trim: true, default: "" },
 
     images: { type: [ImageSchema], default: [] },
     video: { type: VideoSchema, default: null },
+    vehicleHistoryReport: { type: VehicleHistoryReportSchema, default: () => ({}) },
 
     status: {
       type: String,
@@ -130,6 +134,15 @@ const MarketplaceListingSchema = new Schema(
     reviewedAt: { type: Date, default: null },
 
     reports: { type: [ReportSchema], default: [] },
+
+    // Independent of `status` — lets an admin hide one listing (or every
+    // listing a frozen/suspended/deleted seller owns) from public view
+    // without touching the review/payment status underneath it.
+    adminHidden: { type: Boolean, default: false, index: true },
+    adminHiddenReason: { type: String, trim: true, default: "" },
+
+    /** The seller's explicit attestation that they own this vehicle and the listing is accurate — required before submit/payment. */
+    ownershipAttested: { type: Boolean, default: false },
 
     /** Marked by a clearly-labeled test seller/vehicle for this first version's dry runs. */
     isTest: { type: Boolean, default: false },

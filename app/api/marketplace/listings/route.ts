@@ -5,6 +5,8 @@ import MarketplaceListing from "@/models/MarketplaceListing";
 import { getSellerSession } from "@/lib/sellerSession";
 import { toPublicListing } from "@/lib/publicMarketplaceListing";
 import { resolveDueListings } from "@/lib/resolveListingState";
+import { rateLimit } from "@/lib/rateLimit";
+import { isVinAlreadyActive, DUPLICATE_VIN_ERROR } from "@/lib/duplicateVin";
 
 /**
  * Public marketplace browse — only ever "live" listings, and only ever the
@@ -20,7 +22,7 @@ export async function GET(req: Request) {
   const search = (searchParams.get("search") || "").trim();
   const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
 
-  const query: any = { status: "live" };
+  const query: any = { status: "live", adminHidden: { $ne: true } };
   if (search) {
     const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     query.$or = [{ make: regex }, { model: regex }, { trim: regex }];
@@ -48,9 +50,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sign in to create a listing." }, { status: 401 });
   }
 
+  const limited = rateLimit(`listing-create:${session.sellerId}`, 10, 60 * 60 * 1000);
+  if (!limited.success) {
+    return NextResponse.json(
+      { error: "Too many listings created recently. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   await connectDB();
 
   const body = await req.json().catch(() => ({}));
+
+  const vin = String(body.vin || "").trim().toUpperCase();
+  if (vin && (await isVinAlreadyActive(vin))) {
+    return NextResponse.json({ error: DUPLICATE_VIN_ERROR }, { status: 409 });
+  }
 
   const mileage = Number(body.mileage);
   if (!Number.isFinite(mileage) || mileage < 0) {
@@ -95,7 +110,7 @@ export async function POST(req: Request) {
 
   const listing = await MarketplaceListing.create({
     sellerId: session.sellerId,
-    vin: String(body.vin || "").trim().toUpperCase(),
+    vin,
     year: Number(body.year) || 0,
     make: String(body.make || "").trim(),
     model: String(body.model || "").trim(),
@@ -115,6 +130,7 @@ export async function POST(req: Request) {
     contactPreference: ["phone", "email", "either"].includes(body.contactPreference)
       ? body.contactPreference
       : "either",
+    location: String(body.location || "").trim(),
     images,
     video,
     status: "draft",

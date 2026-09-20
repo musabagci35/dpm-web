@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { connectDB } from "@/lib/mongodb";
 import Car from "@/models/Car";
+import MarketplaceListing from "@/models/MarketplaceListing";
 import AuctionListing from "@/models/AuctionListing";
 
 const SITE_URL = "https://driveprimemotorsllc.com";
@@ -17,6 +18,18 @@ export default async function sitemap() {
   const inventory = cars.map((car: any) => ({
     url: `${SITE_URL}/inventory/${car.slug || car._id}`,
     lastModified: car.updatedAt || new Date(),
+  }));
+
+  // Only live, non-admin-hidden listings — the exact same visibility rule
+  // the public API and the share links themselves enforce.
+  const marketplaceListings = await MarketplaceListing.find({
+    status: "live",
+    adminHidden: { $ne: true },
+  }).lean();
+
+  const marketplace = marketplaceListings.map((listing: any) => ({
+    url: `${SITE_URL}/marketplace/${listing._id}`,
+    lastModified: listing.updatedAt || new Date(),
   }));
 
   // Only live, non-admin-hidden, non-flagged auctions — dropped from the
@@ -70,6 +83,7 @@ export default async function sitemap() {
     },
     ...seoPages,
     ...inventory,
+    ...marketplace,
     ...auctions,
   ];
 }

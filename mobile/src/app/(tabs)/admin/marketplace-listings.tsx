@@ -82,6 +82,13 @@ export default function AdminMarketplaceListingsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.banner}>
+        <Text style={styles.bannerTitle}>Marketplace Moderation</Text>
+        <Text style={styles.bannerSubtitle}>
+          Staff-only review queue for Sell My Car listings. Sellers manage their own listings
+          from the Sell tab and never need access here.
+        </Text>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
         {FILTERS.map((option) => (
           <TouchableOpacity
@@ -143,6 +150,9 @@ export default function AdminMarketplaceListingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb" },
+  banner: { backgroundColor: "#111827", paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
+  bannerTitle: { color: "#fff", fontWeight: "900", fontSize: 16 },
+  bannerSubtitle: { color: "#d1d5db", fontSize: 12, lineHeight: 17, marginTop: 4 },
   filterRow: { flexGrow: 0, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
   filterRowContent: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
   filterPill: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginRight: 8 },

@@ -33,7 +33,7 @@ export default function AdminStackLayout() {
       <Stack.Screen name="leads" options={{ title: "Leads" }} />
       <Stack.Screen
         name="marketplace-listings"
-        options={{ title: "Marketplace Listings" }}
+        options={{ title: "Marketplace Moderation" }}
       />
       <Stack.Screen
         name="marketplace-listing/[id]"
