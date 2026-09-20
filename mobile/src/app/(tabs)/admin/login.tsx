@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
-import { router, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams, Link } from "expo-router";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
-import { AdminAuthError, adminLogin } from "@/lib/auth";
+import AuthTextInput from "@/components/shared/AuthTextInput";
+import { AdminAuthError, adminBiometricLogin, adminHasBiometricEnrolled, adminLogin } from "@/lib/auth";
 import { API_BASE_URL } from "@/lib/api";
+import { promptBiometricUnlock, shouldOfferBiometricSetup } from "@/lib/biometricAuth";
 
 export default function AdminLoginScreen() {
   const { reason } = useLocalSearchParams<{ reason?: string }>();
@@ -20,6 +21,15 @@ export default function AdminLoginScreen() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [biometricEnrolled, setBiometricEnrolled] = useState(false);
+  const [biometricBusy, setBiometricBusy] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      adminHasBiometricEnrolled().then(setBiometricEnrolled);
+    }, [])
+  );
 
   // Arriving here because the dashboard's own session check failed (e.g. the
   // admin-token cookie from a prior login didn't verify) must be explained,
@@ -32,6 +42,20 @@ export default function AdminLoginScreen() {
       );
     }
   }, [reason]);
+
+  function clearAll() {
+    setEmail("");
+    setPassword("");
+    setError(null);
+  }
+
+  async function afterLoginSuccess() {
+    if (await shouldOfferBiometricSetup("admin")) {
+      router.replace({ pathname: "/admin/biometric-setup", params: { next: "/admin" } });
+    } else {
+      router.replace("/admin");
+    }
+  }
 
   async function handleSubmit() {
     setError(null);
@@ -47,7 +71,7 @@ export default function AdminLoginScreen() {
       await adminLogin(email.trim(), password);
       // Never log the password or the session token — only navigate on success.
       setPassword("");
-      router.replace("/admin");
+      await afterLoginSuccess();
     } catch (err) {
       const message =
         err instanceof AdminAuthError
@@ -61,37 +85,93 @@ export default function AdminLoginScreen() {
     }
   }
 
+  async function handleBiometricLogin() {
+    setError(null);
+    setBiometricBusy(true);
+    try {
+      const unlock = await promptBiometricUnlock("Sign in to Drive Prime Motors admin");
+      if (!unlock.success) {
+        if (unlock.error !== "cancelled") {
+          setError("Face ID / Touch ID sign-in failed. Use your password below, or use phone sign-in.");
+        }
+        return;
+      }
+      await adminBiometricLogin();
+      await afterLoginSuccess();
+    } catch (err) {
+      setError(
+        err instanceof AdminAuthError
+          ? `${err.message} Use your password below, or use phone sign-in.`
+          : "Biometric sign-in failed. Use your password below, or use phone sign-in."
+      );
+      setBiometricEnrolled(await adminHasBiometricEnrolled());
+    } finally {
+      setBiometricBusy(false);
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Admin Sign In</Text>
-        <Text style={styles.subtitle}>
-          Drive Prime Motors staff access only.
-        </Text>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Admin Sign In</Text>
+            <Text style={styles.subtitle}>Drive Prime Motors staff access only.</Text>
+          </View>
+          {(email || password) && (
+            <TouchableOpacity onPress={clearAll} accessibilityRole="button" accessibilityLabel="Clear all fields">
+              <Text style={styles.clearAllText}>Clear All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={styles.debugHost}>Connecting to {API_BASE_URL}</Text>
 
-        <TextInput
-          style={styles.input}
+        {biometricEnrolled ? (
+          <>
+            <TouchableOpacity
+              style={[styles.biometricButton, biometricBusy && styles.buttonDisabled]}
+              onPress={handleBiometricLogin}
+              disabled={biometricBusy}
+              accessibilityRole="button"
+            >
+              {biometricBusy ? (
+                <ActivityIndicator color="#111827" />
+              ) : (
+                <Text style={styles.biometricButtonText}>🔐 Sign in with Face ID / Touch ID</Text>
+              )}
+            </TouchableOpacity>
+            <View style={styles.orRow}>
+              <View style={styles.orLine} />
+              <Text style={styles.orText}>OR</Text>
+              <View style={styles.orLine} />
+            </View>
+          </>
+        ) : null}
+
+        <AuthTextInput
           placeholder="Admin email"
           value={email}
           onChangeText={setEmail}
-          autoCapitalize="none"
-          autoCorrect={false}
           keyboardType="email-address"
           textContentType="emailAddress"
+          accessibilityLabel="Admin email"
         />
 
-        <TextInput
-          style={styles.input}
+        <AuthTextInput
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          isPassword
           textContentType="password"
+          accessibilityLabel="Password"
         />
+
+        <Link href="/admin/forgot-password" style={styles.forgotLink}>
+          Forgot password?
+        </Link>
 
         {error && <Text style={styles.error}>{error}</Text>}
 
@@ -106,6 +186,10 @@ export default function AdminLoginScreen() {
             <Text style={styles.buttonText}>Sign In</Text>
           )}
         </TouchableOpacity>
+
+        <Link href="/admin/phone-login" style={styles.link}>
+          Use phone instead →
+        </Link>
       </View>
     </KeyboardAvoidingView>
   );
@@ -123,18 +207,23 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
   },
+  headerRow: { flexDirection: "row", alignItems: "flex-start" },
   title: { fontSize: 24, fontWeight: "900", color: "#111827" },
   subtitle: { marginTop: 4, color: "#6b7280", fontSize: 13 },
+  clearAllText: { color: "#6b7280", fontWeight: "700", fontSize: 12, marginTop: 4 },
   debugHost: { marginTop: 4, marginBottom: 16, color: "#9ca3af", fontSize: 11 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+  biometricButton: {
+    borderWidth: 1.5,
+    borderColor: "#111827",
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-    fontSize: 15,
+    paddingVertical: 14,
+    alignItems: "center",
   },
+  biometricButtonText: { color: "#111827", fontWeight: "800", fontSize: 14 },
+  orRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 14 },
+  orLine: { flex: 1, height: 1, backgroundColor: "#e5e7eb" },
+  orText: { color: "#9ca3af", fontSize: 10, fontWeight: "800", letterSpacing: 1 },
+  forgotLink: { color: "#b91c1c", fontWeight: "700", fontSize: 13, textAlign: "right", marginBottom: 12, marginTop: -4 },
   error: {
     color: "#dc2626",
     fontSize: 13,
@@ -151,4 +240,5 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  link: { color: "#1d4ed8", fontWeight: "800", fontSize: 13, textAlign: "center", marginTop: 16 },
 });

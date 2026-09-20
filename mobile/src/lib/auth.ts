@@ -1,6 +1,11 @@
 import * as SecureStore from "expo-secure-store";
 
 import { API_BASE_URL } from "./api";
+import {
+  clearBiometricCredential,
+  getBiometricCredential,
+  storeBiometricCredential,
+} from "./biometricAuth";
 
 const SESSION_KEY = "dpm_admin_session";
 const REQUEST_TIMEOUT_MS = 15000;
@@ -189,6 +194,21 @@ export async function adminLogin(
 }
 
 /** Calls the real POST /api/admin/logout and clears the local session marker. */
+/** Always resolves the same way regardless of whether the email exists — the server response is deliberately generic. */
+export async function adminForgotPassword(email: string): Promise<string> {
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/admin/forgot-password`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    },
+    "Password reset request"
+  );
+  const data = await parseJsonSafe(res);
+  return data?.message || "If an account exists for that email, a password reset link has been sent.";
+}
+
 export async function adminLogout(): Promise<void> {
   try {
     await fetchWithTimeout(
@@ -202,6 +222,139 @@ export async function adminLogout(): Promise<void> {
 
   await SecureStore.deleteItemAsync(SESSION_KEY);
   notifyAdminAuthChange(null);
+}
+
+/** Signs out of every device — the server bumps sessionVersion and clears biometricCredentialHash, so this also permanently disables biometric sign-in until re-enrolled. */
+export async function adminLogoutAll(): Promise<void> {
+  try {
+    await fetchWithTimeout(
+      `${API_BASE_URL}/api/admin/logout-all`,
+      { method: "POST", credentials: "include" },
+      "Logout-all request"
+    );
+  } catch {
+    // Local state is still cleared below even if the network call fails.
+  }
+  await SecureStore.deleteItemAsync(SESSION_KEY);
+  await clearBiometricCredential("admin");
+  notifyAdminAuthChange(null);
+}
+
+/* ------------------------------------------------------------------ *
+ * Phone + SMS one-time-code login
+ * ------------------------------------------------------------------ */
+
+/** Always resolves the same way regardless of whether the phone is enrolled — the server response is deliberately generic. */
+export async function adminRequestOtpLogin(phone: string): Promise<string> {
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/admin/otp/request`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone }),
+    },
+    "Login code request"
+  );
+  const data = await parseJsonSafe(res);
+  if (!res.ok && res.status === 503) {
+    throw new AdminAuthError(data?.error || "SMS sign-in isn't available right now.", res.status);
+  }
+  return data?.message || "If that phone number has a verified admin account, a login code was sent.";
+}
+
+export async function adminVerifyOtpLogin(phone: string, code: string): Promise<AdminUser> {
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/admin/otp/verify`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ phone, code }),
+    },
+    "Code verification"
+  );
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    throw new AdminAuthError(data?.error || "That code is invalid or has expired.", res.status);
+  }
+  const user = await fetchAdminMe();
+  if (!user || user.role !== "admin") {
+    throw new AdminAuthError("Sign-in succeeded, but the session could not be verified as an admin.");
+  }
+  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(user));
+  notifyAdminAuthChange(user);
+  return user;
+}
+
+/* ------------------------------------------------------------------ *
+ * Face ID / Touch ID
+ *
+ * Every function here assumes the biometric *device* unlock already
+ * happened (see lib/biometricAuth.ts's promptBiometricUnlock) — none of
+ * this ever touches the actual Face ID/Touch ID scan, only the
+ * already-unlocked device-bound credential.
+ * ------------------------------------------------------------------ */
+
+export async function adminHasBiometricEnrolled(): Promise<boolean> {
+  return Boolean(await getBiometricCredential("admin"));
+}
+
+/** Must only be called while already signed in — enrolling requires one real, already-completed login first. */
+export async function adminEnrollBiometric(): Promise<void> {
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/admin/biometric/register`,
+    { method: "POST", credentials: "include" },
+    "Biometric enrollment"
+  );
+  const data = await parseJsonSafe(res);
+  if (!res.ok || !data?.credential || !data?.userId) {
+    throw new AdminAuthError(data?.error || "Could not enable biometric sign-in.", res.status);
+  }
+  await storeBiometricCredential("admin", { id: data.userId, credential: data.credential });
+}
+
+export async function adminBiometricLogin(): Promise<AdminUser> {
+  const stored = await getBiometricCredential("admin");
+  if (!stored) {
+    throw new AdminAuthError("Biometric sign-in isn't set up on this device.");
+  }
+
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/admin/biometric/login`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ userId: stored.id, credential: stored.credential }),
+    },
+    "Biometric sign-in"
+  );
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    await clearBiometricCredential("admin");
+    throw new AdminAuthError(data?.error || "Biometric sign-in failed.", res.status);
+  }
+  const user = await fetchAdminMe();
+  if (!user || user.role !== "admin") {
+    throw new AdminAuthError("Sign-in succeeded, but the session could not be verified as an admin.");
+  }
+  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(user));
+  notifyAdminAuthChange(user);
+  return user;
+}
+
+/** Turns off biometric sign-in without touching the current password session. */
+export async function adminRevokeBiometric(): Promise<void> {
+  try {
+    await fetchWithTimeout(
+      `${API_BASE_URL}/api/admin/biometric/revoke`,
+      { method: "POST", credentials: "include" },
+      "Biometric revoke"
+    );
+  } catch {
+    // Local credential is cleared below regardless of network outcome.
+  }
+  await clearBiometricCredential("admin");
 }
 
 /** Reads the locally-stored session marker without contacting the server. */

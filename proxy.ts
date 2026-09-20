@@ -14,15 +14,29 @@ export function proxy(req: NextRequest) {
   }
 
   const isAdminPath = pathname.startsWith("/admin");
-  const isLoginPath = pathname === "/admin/login";
-  const isAdminApiLogin = pathname === "/api/admin/login";
-  const isAdminApiLogout = pathname === "/api/admin/logout";
 
   if (!isAdminPath && !pathname.startsWith("/api/admin")) {
     return NextResponse.next();
   }
 
-  if (isLoginPath || isAdminApiLogin || isAdminApiLogout) {
+  // Every one of these is reachable specifically because the visitor is
+  // *not* authenticated yet — signing in, and every step of recovering a
+  // forgotten password (by definition, before a session exists).
+  const PUBLIC_ADMIN_PATHS = new Set([
+    "/admin/login",
+    "/admin/reset-password",
+    "/api/admin/login",
+    "/api/admin/logout",
+    "/api/admin/forgot-password",
+    "/api/admin/forgot-password/sms",
+    "/api/admin/reset-password",
+    "/api/admin/reset-password/sms",
+    "/api/admin/biometric/login",
+    "/api/admin/otp/request",
+    "/api/admin/otp/verify",
+  ]);
+
+  if (PUBLIC_ADMIN_PATHS.has(pathname)) {
     return NextResponse.next();
   }
 

@@ -15,6 +15,12 @@ export default function AdminStackLayout() {
         options={{ title: "Admin", headerBackVisible: false }}
       />
       <Stack.Screen name="login" options={{ title: "Admin Sign In" }} />
+      <Stack.Screen name="forgot-password" options={{ title: "Forgot Password" }} />
+      <Stack.Screen name="phone-login" options={{ title: "Sign In with Phone" }} />
+      <Stack.Screen
+        name="biometric-setup"
+        options={{ title: "Face ID / Touch ID", headerBackVisible: false }}
+      />
       <Stack.Screen name="add-vehicle" options={{ title: "Add Vehicle" }} />
       <Stack.Screen
         name="edit-vehicle/[id]"
@@ -37,6 +43,8 @@ export default function AdminStackLayout() {
         name="auction-listing/[id]"
         options={{ title: "Review Auction" }}
       />
+      <Stack.Screen name="sellers" options={{ title: "Seller Management" }} />
+      <Stack.Screen name="seller/[id]" options={{ title: "Seller Detail" }} />
     </Stack>
   );
 }
