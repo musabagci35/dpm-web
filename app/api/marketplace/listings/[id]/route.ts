@@ -6,6 +6,7 @@ import MarketplaceListing from "@/models/MarketplaceListing";
 import { getSellerSession } from "@/lib/sellerSession";
 import { getAdminSession } from "@/lib/adminSession";
 import { toPublicListing } from "@/lib/publicMarketplaceListing";
+import { resolveDueListings } from "@/lib/resolveListingState";
 import { LISTING_ACTIVE_DAYS } from "@/lib/stripe";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -30,6 +31,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
   }
 
   await connectDB();
+  await resolveDueListings();
   const listing = await MarketplaceListing.findById(id).lean();
 
   if (!listing) {
@@ -48,7 +50,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
     return NextResponse.json(listing);
   }
 
-  if ((listing as any).status === "live") {
+  if ((listing as any).status === "live" && !(listing as any).adminHidden) {
     return NextResponse.json(toPublicListing(listing));
   }
 

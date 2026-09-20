@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import MarketplaceListing from "@/models/MarketplaceListing";
 import { getSellerSession } from "@/lib/sellerSession";
+import { resolveDueListings } from "@/lib/resolveListingState";
 
 /** A seller's own listings, every status, full detail (this is never public). */
 export async function GET() {
@@ -12,6 +13,7 @@ export async function GET() {
   }
 
   await connectDB();
+  await resolveDueListings();
 
   const listings = await MarketplaceListing.find({ sellerId: session.sellerId })
     .sort({ createdAt: -1 })

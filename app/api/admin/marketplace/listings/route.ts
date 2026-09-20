@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import MarketplaceListing from "@/models/MarketplaceListing";
 import { getAdminSession } from "@/lib/adminSession";
+import { resolveDueListings } from "@/lib/resolveListingState";
 
 const STATUSES = [
   "draft",
@@ -28,11 +29,7 @@ export async function GET(req: Request) {
   }
 
   await connectDB();
-
-  await MarketplaceListing.updateMany(
-    { status: "live", listingExpiresAt: { $lt: new Date() } },
-    { $set: { status: "expired" } }
-  );
+  await resolveDueListings();
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") || "";

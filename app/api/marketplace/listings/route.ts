@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/mongodb";
 import MarketplaceListing from "@/models/MarketplaceListing";
 import { getSellerSession } from "@/lib/sellerSession";
 import { toPublicListing } from "@/lib/publicMarketplaceListing";
+import { resolveDueListings } from "@/lib/resolveListingState";
 
 /**
  * Public marketplace browse — only ever "live" listings, and only ever the
@@ -13,11 +14,7 @@ import { toPublicListing } from "@/lib/publicMarketplaceListing";
  */
 export async function GET(req: Request) {
   await connectDB();
-
-  await MarketplaceListing.updateMany(
-    { status: "live", listingExpiresAt: { $lt: new Date() } },
-    { $set: { status: "expired" } }
-  );
+  await resolveDueListings();
 
   const { searchParams } = new URL(req.url);
   const search = (searchParams.get("search") || "").trim();
