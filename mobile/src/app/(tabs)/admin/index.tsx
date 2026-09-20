@@ -217,7 +217,7 @@ export default function AdminDashboardScreen() {
         style={styles.marketplaceButton}
         onPress={() => router.push("/admin/marketplace-listings")}
       >
-        <Text style={styles.marketplaceButtonText}>Sell My Car — Marketplace Listings</Text>
+        <Text style={styles.marketplaceButtonText}>Marketplace Moderation — Review Seller Listings</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
