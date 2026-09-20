@@ -227,6 +227,13 @@ export default function AdminDashboardScreen() {
         <Text style={styles.marketplaceButtonText}>Auction Moderation — Review Seller Auctions</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.marketplaceButton}
+        onPress={() => router.push("/admin/sellers")}
+      >
+        <Text style={styles.marketplaceButtonText}>Seller Management — Accounts &amp; Moderation</Text>
+      </TouchableOpacity>
+
       {message && <Text style={styles.success}>{message}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
 
