@@ -265,6 +265,16 @@ export default function EditVehicleScreen() {
           )}
         </TouchableOpacity>
 
+        {form.status === "available" || form.status === "pending" ? (
+          <TouchableOpacity
+            style={styles.marketingButton}
+            onPress={() => router.push(`/marketing/car/${id}`)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.marketingButtonText}>📣 Marketing Center</Text>
+          </TouchableOpacity>
+        ) : null}
+
         <TouchableOpacity
           style={[styles.deleteButton, deleting && styles.buttonDisabled]}
           onPress={confirmDelete}
@@ -324,4 +334,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   deleteButtonText: { color: "#b91c1c", fontWeight: "800", fontSize: 14 },
+  marketingButton: { borderWidth: 1.5, borderColor: "#111827", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 12 },
+  marketingButtonText: { color: "#111827", fontWeight: "800", fontSize: 14 },
 });

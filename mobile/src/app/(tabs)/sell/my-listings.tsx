@@ -195,6 +195,15 @@ export default function MyListingsScreen() {
               {row.item.status === "draft" && row.item.rejectionReason ? (
                 <Text style={styles.rejectionText}>Reason: {row.item.rejectionReason}</Text>
               ) : null}
+              {row.item.status === "live" || row.item.status === "scheduled" ? (
+                <TouchableOpacity
+                  style={styles.marketingButton}
+                  onPress={() => router.push(`/marketing/auction/${row.item._id}`)}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.marketingButtonText}>📣 Marketing Center</Text>
+                </TouchableOpacity>
+              ) : null}
             </TouchableOpacity>
           )
         )
