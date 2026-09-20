@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
+import * as DocumentPicker from "expo-document-picker";
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+
+import { getCloudinarySignature } from "@/lib/api";
+import { uploadDocumentToCloudinary } from "@/lib/upload";
+
+const REPORT_FOLDER = "drive-prime-motors/vehicle-history-reports";
 
 export type AdminVehicleHistoryReport = {
   url: string;
@@ -31,6 +37,8 @@ export default function VehicleHistoryReportEditor({
   const [source, setSource] = useState<"carfax" | "other">(report?.source === "carfax" ? "carfax" : "other");
   const [reportDate, setReportDate] = useState(report?.reportDate ? report.reportDate.slice(0, 10) : "");
   const [saving, setSaving] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     setUrl(report?.url || "");
@@ -40,13 +48,43 @@ export default function VehicleHistoryReportEditor({
 
   const pendingApproval = Boolean(report?.sellerProvided && report?.url && !report?.approved);
 
-  async function handleSave(approved: boolean) {
-    if (!url.trim()) return;
+  async function handleSave(approved: boolean, urlOverride?: string) {
+    const value = (urlOverride ?? url).trim();
+    if (!value) return;
     setSaving(true);
     try {
-      await onSave({ url: url.trim(), source, reportDate: reportDate.trim() || undefined, approved });
+      await onSave({ url: value, source, reportDate: reportDate.trim() || undefined, approved });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePickPdf() {
+    setUploadError(null);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const asset = result.assets[0];
+      setUploadingPdf(true);
+      const signature = await getCloudinarySignature(REPORT_FOLDER, "raw");
+      const uploaded = await uploadDocumentToCloudinary({
+        uri: asset.uri,
+        fileName: asset.name,
+        mimeType: asset.mimeType || "application/pdf",
+      }, signature);
+
+      setUrl(uploaded.url);
+      // The PDF is the report — save immediately rather than making the
+      // admin paste the URL back in and press Save again.
+      await handleSave(true, uploaded.url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Could not upload that PDF.");
+    } finally {
+      setUploadingPdf(false);
     }
   }
 
@@ -71,6 +109,25 @@ export default function VehicleHistoryReportEditor({
         autoCapitalize="none"
         autoCorrect={false}
       />
+
+      <View style={styles.orRow}>
+        <View style={styles.orLine} />
+        <Text style={styles.orText}>OR</Text>
+        <View style={styles.orLine} />
+      </View>
+
+      <TouchableOpacity
+        style={[styles.uploadButton, (uploadingPdf || busy) && styles.buttonDisabled]}
+        onPress={handlePickPdf}
+        disabled={uploadingPdf || busy}
+      >
+        {uploadingPdf ? (
+          <ActivityIndicator color="#111827" />
+        ) : (
+          <Text style={styles.uploadButtonText}>📄 Upload CARFAX PDF</Text>
+        )}
+      </TouchableOpacity>
+      {uploadError ? <Text style={styles.uploadErrorText}>{uploadError}</Text> : null}
 
       <Text style={styles.fieldLabel}>Source</Text>
       <View style={styles.pillRow}>
@@ -125,6 +182,12 @@ const styles = StyleSheet.create({
   pendingBannerText: { color: "#92400e", fontSize: 12, lineHeight: 17 },
   fieldLabel: { color: "#374151", fontSize: 12, fontWeight: "800", marginBottom: 8, marginTop: 4 },
   input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 13, color: "#111827", marginBottom: 4, backgroundColor: "#fff" },
+  orRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 10 },
+  orLine: { flex: 1, height: 1, backgroundColor: "#e5e7eb" },
+  orText: { color: "#9ca3af", fontSize: 10, fontWeight: "800", letterSpacing: 1 },
+  uploadButton: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingVertical: 11, alignItems: "center", backgroundColor: "#f9fafb" },
+  uploadButtonText: { color: "#111827", fontWeight: "800", fontSize: 13 },
+  uploadErrorText: { color: "#b91c1c", fontSize: 12, marginTop: 6, fontWeight: "600" },
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   pill: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 9, paddingVertical: 8, paddingHorizontal: 11 },
   pillSelected: { backgroundColor: "#111827", borderColor: "#111827" },

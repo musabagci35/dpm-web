@@ -1,14 +1,23 @@
-import * as WebBrowser from "expo-web-browser";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { VehicleHistoryReportInfo } from "@/lib/api";
 
+function openReport(url: string) {
+  if (Platform.OS === "web") {
+    if (typeof window !== "undefined") {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+    return;
+  }
+  Linking.openURL(url);
+}
+
 /**
- * Shown on every inventory car, auction, and marketplace listing surface.
- * Never claims a report exists when it doesn't, and never labels anything
- * "CARFAX" unless an admin specifically verified it as source: "carfax" —
- * every other case (including seller-provided, admin-attached-but-generic)
- * uses the neutral "Vehicle History Report" label.
+ * Self-service report access — shown on every inventory car, auction, and
+ * marketplace listing surface. Never claims a report exists when it
+ * doesn't, and never invents or infers one from the VIN. "Contact Us" is
+ * only ever the fallback shown when no report exists, never the primary
+ * action when a real one is available.
  */
 export default function VehicleHistoryReportButton({
   report,
@@ -19,8 +28,6 @@ export default function VehicleHistoryReportButton({
   onRequestReport: () => void;
 }) {
   if (report?.url) {
-    const isCarfax = report.source === "carfax";
-    const label = isCarfax ? "CARFAX Report" : "Vehicle History Report";
     const dateLabel = report.reportDate
       ? new Date(report.reportDate).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
       : null;
@@ -29,13 +36,13 @@ export default function VehicleHistoryReportButton({
       <View>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => WebBrowser.openBrowserAsync(report.url)}
+          onPress={() => openReport(report.url)}
           accessibilityRole="button"
         >
-          <Text style={styles.buttonText}>View {label}</Text>
+          <Text style={styles.buttonText}>View CARFAX Report</Text>
         </TouchableOpacity>
         <Text style={styles.meta}>
-          Source: {isCarfax ? "CARFAX" : "Dealer-provided"}
+          Source: {report.source === "carfax" ? "CARFAX" : "Dealer-provided"}
           {dateLabel ? ` · Reported ${dateLabel}` : ""}
         </Text>
       </View>
@@ -44,7 +51,7 @@ export default function VehicleHistoryReportButton({
 
   return (
     <View style={styles.unavailableBox}>
-      <Text style={styles.unavailableText}>Report not uploaded yet</Text>
+      <Text style={styles.unavailableText}>CARFAX report not available yet.</Text>
       <TouchableOpacity onPress={onRequestReport} accessibilityRole="button">
         <Text style={styles.requestLink}>Contact Us to Request a Report →</Text>
       </TouchableOpacity>
@@ -56,10 +63,10 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#111827",
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 15,
     alignItems: "center",
   },
-  buttonText: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  buttonText: { color: "#fff", fontWeight: "800", fontSize: 15 },
   meta: { color: "#9ca3af", fontSize: 11, marginTop: 6, textAlign: "center" },
 
   unavailableBox: {
@@ -71,5 +78,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   unavailableText: { color: "#6b7280", fontSize: 13, fontWeight: "700" },
-  requestLink: { color: "#b91c1c", fontWeight: "800", fontSize: 12, marginTop: 8 },
+  requestLink: { color: "#9ca3af", fontWeight: "700", fontSize: 11, marginTop: 8 },
 });

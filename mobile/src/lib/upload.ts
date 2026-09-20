@@ -66,3 +66,64 @@ export function uploadPhotoToCloudinary(
     xhr.send(form);
   });
 }
+
+export type PickedDocument = {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+};
+
+export type UploadedDocument = { url: string; publicId: string };
+
+/**
+ * Uploads a document (e.g. a CARFAX PDF) to Cloudinary as a "raw" resource —
+ * stored as-is rather than processed as an image, so the original PDF is
+ * exactly what a viewer later downloads/opens.
+ */
+export function uploadDocumentToCloudinary(
+  file: PickedDocument,
+  signature: CloudinarySignature,
+  onProgress?: (percent: number) => void
+): Promise<UploadedDocument> {
+  return new Promise((resolve, reject) => {
+    const name = file.fileName || `document-${Date.now()}.pdf`;
+    const type = file.mimeType || "application/pdf";
+
+    const form = new FormData();
+    form.append("file", { uri: file.uri, name, type } as unknown as Blob);
+    form.append("api_key", signature.apiKey);
+    form.append("timestamp", String(signature.timestamp));
+    form.append("signature", signature.signature);
+    form.append("folder", signature.folder);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${signature.cloudName}/raw/upload`);
+
+    xhr.upload.onprogress = (event) => {
+      if (onProgress && event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      let data: any = null;
+      try {
+        data = JSON.parse(xhr.responseText);
+      } catch {
+        // fall through to the status check below
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300 && data?.secure_url) {
+        resolve({ url: data.secure_url, publicId: data.public_id || "" });
+      } else {
+        reject(new Error(data?.error?.message || "Document upload failed."));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error("Document upload failed. Check your connection."));
+    };
+
+    xhr.send(form);
+  });
+}

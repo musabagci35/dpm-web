@@ -198,6 +198,13 @@ export default function VehicleDetailScreen() {
           </>
         ) : null}
 
+        <View style={styles.reportSection}>
+          <VehicleHistoryReportButton
+            report={vehicle.vehicleHistoryReport}
+            onRequestReport={() => Linking.openURL(`tel:${DEALER_PHONE}`)}
+          />
+        </View>
+
         {specs.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionHeading}>Specifications</Text>
@@ -237,14 +244,6 @@ export default function VehicleDetailScreen() {
             <Text style={styles.videoButtonText}>Watch vehicle video</Text>
           </TouchableOpacity>
         ) : null}
-
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Vehicle History Report</Text>
-          <VehicleHistoryReportButton
-            report={vehicle.vehicleHistoryReport}
-            onRequestReport={() => Linking.openURL(`tel:${DEALER_PHONE}`)}
-          />
-        </View>
 
         {isSold ? (
           <View style={styles.soldNotice}>
@@ -349,6 +348,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   callButtonText: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  reportSection: { marginTop: 14 },
 
   section: { marginTop: 24 },
   sectionHeading: {

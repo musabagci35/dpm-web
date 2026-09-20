@@ -12,6 +12,10 @@ export async function POST(req: Request) {
         ? body.folder.trim()
         : process.env.CLOUDINARY_UPLOAD_FOLDER || "drive-prime-motors";
 
+    // "raw" is for non-image/video files (e.g. a CARFAX PDF) — Cloudinary
+    // stores them as-is instead of trying to process them as an image.
+    const resourceType = body.resourceType === "raw" ? "raw" : "image";
+
     const timestamp = Math.round(Date.now() / 1000);
 
     const paramsToSign = {
@@ -30,6 +34,7 @@ export async function POST(req: Request) {
       signature,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       apiKey: process.env.CLOUDINARY_API_KEY,
+      resourceType,
     });
   } catch (error) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

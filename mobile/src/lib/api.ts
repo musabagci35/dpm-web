@@ -765,16 +765,18 @@ export type CloudinarySignature = {
   signature: string;
   cloudName: string;
   apiKey: string;
+  resourceType?: "image" | "video" | "raw";
 };
 
 export async function getCloudinarySignature(
-  folder: string
+  folder: string,
+  resourceType?: "image" | "raw"
 ): Promise<CloudinarySignature> {
   const res = await fetch(`${API_BASE_URL}/api/admin/cloudinary-sign`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ folder }),
+    body: JSON.stringify({ folder, resourceType }),
   });
 
   const data = await parseJsonSafe(res);

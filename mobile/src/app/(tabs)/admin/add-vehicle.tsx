@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
+import * as DocumentPicker from "expo-document-picker";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -17,7 +18,10 @@ import VehicleFieldsForm, {
   emptyVehicleForm,
   VehicleFormState,
 } from "@/components/admin/VehicleFieldsForm";
-import { createAdminCar, lookupVin, VehicleImage, VinLookupResult } from "@/lib/api";
+import { createAdminCar, getCloudinarySignature, lookupVin, VehicleImage, VinLookupResult } from "@/lib/api";
+import { uploadDocumentToCloudinary } from "@/lib/upload";
+
+const REPORT_FOLDER = "drive-prime-motors/vehicle-history-reports";
 
 export default function AddVehicleScreen() {
   const [vin, setVin] = useState("");
@@ -27,12 +31,39 @@ export default function AddVehicleScreen() {
   const [images, setImages] = useState<VehicleImage[]>([]);
   const [reportUrl, setReportUrl] = useState("");
   const [reportSource, setReportSource] = useState<"carfax" | "other">("carfax");
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function setField(patch: Partial<VehicleFormState>) {
     setForm((current) => ({ ...current, ...patch }));
+  }
+
+  async function handlePickReportPdf() {
+    setUploadError(null);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const asset = result.assets[0];
+      setUploadingPdf(true);
+      const signature = await getCloudinarySignature(REPORT_FOLDER, "raw");
+      const uploaded = await uploadDocumentToCloudinary({
+        uri: asset.uri,
+        fileName: asset.name,
+        mimeType: asset.mimeType || "application/pdf",
+      }, signature);
+      setReportUrl(uploaded.url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Could not upload that PDF.");
+    } finally {
+      setUploadingPdf(false);
+    }
   }
 
   async function handleDecode() {
@@ -192,9 +223,9 @@ export default function AddVehicleScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Vehicle History Report (optional)</Text>
           <Text style={styles.cardSubtitle}>
-            Only ever a real, verified report link — this is never generated or inferred from the
-            VIN. Leave blank if none exists yet; the public listing will show "Report not
-            uploaded yet" until one is added.
+            Only ever a real, verified report — this is never generated or inferred from the VIN.
+            Leave blank if none exists yet; the public listing will show "CARFAX report not
+            available yet" until one is added.
           </Text>
           <TextInput
             style={styles.input}
@@ -206,6 +237,26 @@ export default function AddVehicleScreen() {
             autoCorrect={false}
             keyboardType="url"
           />
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.orLine} />
+          </View>
+          <TouchableOpacity
+            style={[styles.uploadButton, (uploadingPdf || saving) && styles.buttonDisabled]}
+            onPress={handlePickReportPdf}
+            disabled={uploadingPdf || saving}
+          >
+            {uploadingPdf ? (
+              <ActivityIndicator color="#111827" />
+            ) : (
+              <Text style={styles.uploadButtonText}>📄 Upload CARFAX PDF</Text>
+            )}
+          </TouchableOpacity>
+          {uploadError ? <Text style={styles.uploadErrorText}>{uploadError}</Text> : null}
+          {reportUrl.trim() ? (
+            <Text style={styles.reportAttachedText}>Report attached — will save with this vehicle.</Text>
+          ) : null}
           <View style={styles.reportSourceRow}>
             {(["carfax", "other"] as const).map((option) => (
               <TouchableOpacity
@@ -259,6 +310,9 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 16, fontWeight: "900", color: "#111827" },
   cardSubtitle: { color: "#6b7280", fontSize: 13, lineHeight: 19, marginTop: 5, marginBottom: 12 },
+  orRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 10 },
+  orLine: { flex: 1, height: 1, backgroundColor: "#e5e7eb" },
+  orText: { color: "#9ca3af", fontSize: 10, fontWeight: "800", letterSpacing: 1 },
   inlineRow: { flexDirection: "row", gap: 8, alignItems: "stretch" },
   flexInput: { flex: 1, marginBottom: 0 },
   input: {
@@ -282,6 +336,10 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   lookupText: { color: "#1d4ed8", fontSize: 12, marginTop: 10 },
+  uploadButton: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingVertical: 11, alignItems: "center", backgroundColor: "#f9fafb" },
+  uploadButtonText: { color: "#111827", fontWeight: "800", fontSize: 13 },
+  uploadErrorText: { color: "#b91c1c", fontSize: 12, marginTop: 6, fontWeight: "600" },
+  reportAttachedText: { color: "#15803d", fontSize: 12, marginTop: 8, fontWeight: "700" },
   reportSourceRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   reportSourcePill: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 9, paddingVertical: 8, paddingHorizontal: 11 },
   reportSourcePillSelected: { backgroundColor: "#111827", borderColor: "#111827" },
