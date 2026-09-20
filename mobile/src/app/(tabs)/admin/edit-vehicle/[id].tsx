@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 
-import PhotoManager from "@/components/admin/PhotoManager";
+import PhotoManager from "@/components/shared/PhotoManager";
 import VehicleFieldsForm, {
   emptyVehicleForm,
   TitleStatus,

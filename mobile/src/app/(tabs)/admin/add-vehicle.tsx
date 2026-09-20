@@ -13,11 +13,12 @@ import {
   View,
 } from "react-native";
 
-import PhotoManager from "@/components/admin/PhotoManager";
+import PhotoManager from "@/components/shared/PhotoManager";
 import VehicleFieldsForm, {
   emptyVehicleForm,
   VehicleFormState,
 } from "@/components/admin/VehicleFieldsForm";
+import VehicleVideoManager from "@/components/admin/VehicleVideoManager";
 import { createAdminCar, getCloudinarySignature, lookupVin, VehicleImage, VinLookupResult } from "@/lib/api";
 import { consumePendingScannedVin } from "@/lib/scanVinBridge";
 import { uploadDocumentToCloudinary } from "@/lib/upload";
@@ -30,6 +31,7 @@ export default function AddVehicleScreen() {
   const [vinLookup, setVinLookup] = useState<VinLookupResult | null>(null);
   const [form, setForm] = useState<VehicleFormState>(emptyVehicleForm);
   const [images, setImages] = useState<VehicleImage[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
   const [reportUrl, setReportUrl] = useState("");
   const [reportSource, setReportSource] = useState<"carfax" | "other">("carfax");
   const [uploadingPdf, setUploadingPdf] = useState(false);
@@ -172,6 +174,7 @@ export default function AddVehicleScreen() {
         drivetrain: form.drivetrain.trim(),
         status: form.status,
         images,
+        videoUrl: videoUrl.trim(),
         vehicleHistoryReport: reportUrl.trim()
           ? { url: reportUrl.trim(), source: reportSource, approved: true }
           : undefined,
@@ -310,6 +313,11 @@ export default function AddVehicleScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Vehicle Video (optional)</Text>
+          <VehicleVideoManager videoUrl={videoUrl} onChange={setVideoUrl} />
         </View>
 
         <View style={styles.card}>

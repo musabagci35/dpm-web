@@ -642,6 +642,7 @@ export type AdminCarInput = {
   vehicleHistoryReport?: { url: string; source: "carfax" | "seller_provided" | "other"; reportDate?: string; approved?: boolean };
   status?: "available" | "pending" | "sold" | "archived";
   images?: VehicleImage[];
+  videoUrl?: string;
 };
 
 /** Full admin car record — includes fields the public API strips. */
@@ -794,7 +795,7 @@ export type CloudinarySignature = {
 
 export async function getCloudinarySignature(
   folder: string,
-  resourceType?: "image" | "raw"
+  resourceType?: "image" | "raw" | "video"
 ): Promise<CloudinarySignature> {
   const res = await fetch(`${API_BASE_URL}/api/admin/cloudinary-sign`, {
     method: "POST",

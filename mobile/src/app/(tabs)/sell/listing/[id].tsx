@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 
-import PhotoManager from "@/components/admin/PhotoManager";
+import PhotoManager from "@/components/shared/PhotoManager";
 import VideoManager from "@/components/marketplace/VideoManager";
 import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
 import { VehicleImage } from "@/lib/api";
