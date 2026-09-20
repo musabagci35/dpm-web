@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { router } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -18,6 +18,7 @@ import { lookupVin, VehicleImage, VinRecall } from "@/lib/api";
 import { createAuction } from "@/lib/auctionApi";
 import { getMarketplaceCloudinarySignature, ListingVideo, TitleStatus } from "@/lib/marketplaceApi";
 import { verifySellerSession } from "@/lib/marketplaceAuth";
+import { consumePendingScannedVin } from "@/lib/scanVinBridge";
 
 const TITLE_STATUSES: { value: TitleStatus; label: string }[] = [
   { value: "clean", label: "Clean" },
@@ -105,8 +106,18 @@ export default function CreateAuctionScreen() {
     });
   }, []);
 
-  async function handleDecode() {
-    const value = vinInput.replace(/[^a-z0-9]/gi, "").toUpperCase();
+  useFocusEffect(
+    useCallback(() => {
+      const scanned = consumePendingScannedVin();
+      if (scanned) {
+        handleDecode(scanned);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+  );
+
+  async function handleDecode(overrideVin?: string) {
+    const value = (overrideVin ?? vinInput).replace(/[^a-z0-9]/gi, "").toUpperCase();
     setError(null);
     setDecodedNote(null);
 
@@ -114,6 +125,8 @@ export default function CreateAuctionScreen() {
       setError("Enter a valid 17-character VIN.");
       return;
     }
+
+    if (overrideVin) setVinInput(value);
 
     setVinLoading(true);
     try {
@@ -247,6 +260,24 @@ export default function CreateAuctionScreen() {
             model, trim, engine, fuel, body style, transmission, drivetrain). It never fills in
             mileage, title status, or history.
           </Text>
+          <TouchableOpacity
+            style={styles.scanButton}
+            onPress={() => router.push("/sell/scan-vin")}
+            accessibilityRole="button"
+          >
+            <Text style={styles.scanButtonIcon}>📷</Text>
+            <Text style={styles.scanButtonText}>Scan VIN with Camera</Text>
+          </TouchableOpacity>
+          <Text style={styles.scanHint}>
+            Works on a windshield etching, door-jamb sticker, or a printed title document.
+          </Text>
+
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>OR ENTER MANUALLY</Text>
+            <View style={styles.orLine} />
+          </View>
+
           <View style={styles.inlineRow}>
             <TextInput
               style={[styles.input, styles.flexInput]}
@@ -256,8 +287,9 @@ export default function CreateAuctionScreen() {
               onChangeText={(v) => setVinInput(v.toUpperCase())}
               autoCapitalize="characters"
               autoCorrect={false}
+              maxLength={17}
             />
-            <TouchableOpacity style={[styles.smallButton, vinLoading && styles.buttonDisabled]} onPress={handleDecode} disabled={vinLoading}>
+            <TouchableOpacity style={[styles.smallButton, vinLoading && styles.buttonDisabled]} onPress={() => handleDecode()} disabled={vinLoading}>
               {vinLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Decode</Text>}
             </TouchableOpacity>
           </View>
@@ -472,6 +504,21 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 16, padding: 16, marginBottom: 16 },
   cardTitle: { fontSize: 16, fontWeight: "900", color: "#111827" },
   cardSubtitle: { color: "#6b7280", fontSize: 12, lineHeight: 17, marginTop: 5, marginBottom: 12 },
+  scanButton: {
+    flexDirection: "row",
+    backgroundColor: "#111827",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  scanButtonIcon: { fontSize: 18 },
+  scanButtonText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  scanHint: { color: "#9ca3af", fontSize: 11, textAlign: "center", marginTop: 8 },
+  orRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 14 },
+  orLine: { flex: 1, height: 1, backgroundColor: "#e5e7eb" },
+  orText: { color: "#9ca3af", fontSize: 10, fontWeight: "800", letterSpacing: 1 },
   inlineRow: { flexDirection: "row", gap: 8, alignItems: "stretch" },
   flexInput: { flex: 1, marginBottom: 0 },
   input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: "#111827", marginBottom: 10, backgroundColor: "#fff" },
