@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { router } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,7 +14,7 @@ import {
 
 import PhotoManager from "@/components/admin/PhotoManager";
 import VideoManager from "@/components/marketplace/VideoManager";
-import { lookupVin, VehicleImage } from "@/lib/api";
+import { lookupVin, VehicleImage, VinRecall } from "@/lib/api";
 import {
   createListing,
   getMarketplaceCloudinarySignature,
@@ -22,6 +22,7 @@ import {
   TitleStatus,
 } from "@/lib/marketplaceApi";
 import { verifySellerSession } from "@/lib/marketplaceAuth";
+import { consumePendingScannedVin } from "@/lib/scanVinBridge";
 
 const TITLE_STATUSES: { value: TitleStatus; label: string }[] = [
   { value: "clean", label: "Clean" },
@@ -63,6 +64,8 @@ export default function CreateListingScreen() {
   const [vinLoading, setVinLoading] = useState(false);
   const [specs, setSpecs] = useState<DecodedSpecs>(emptySpecs);
   const [decodedNote, setDecodedNote] = useState<string | null>(null);
+  const [recalls, setRecalls] = useState<VinRecall[]>([]);
+  const [recallsError, setRecallsError] = useState<string | null>(null);
 
   const [mileage, setMileage] = useState("");
   const [titleStatus, setTitleStatus] = useState<TitleStatus>("unknown");
@@ -92,8 +95,21 @@ export default function CreateListingScreen() {
     });
   }, []);
 
-  async function handleDecode() {
-    const value = vinInput.replace(/[^a-z0-9]/gi, "").toUpperCase();
+  // Picks up a VIN the seller just confirmed on the scan screen and decodes
+  // it immediately — the scan screen already had them confirm/correct it,
+  // so no second confirmation step is needed here.
+  useFocusEffect(
+    useCallback(() => {
+      const scanned = consumePendingScannedVin();
+      if (scanned) {
+        handleDecode(scanned);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+  );
+
+  async function handleDecode(overrideVin?: string) {
+    const value = (overrideVin ?? vinInput).replace(/[^a-z0-9]/gi, "").toUpperCase();
     setError(null);
     setDecodedNote(null);
 
@@ -101,6 +117,8 @@ export default function CreateListingScreen() {
       setError("Enter a valid 17-character VIN.");
       return;
     }
+
+    if (overrideVin) setVinInput(value);
 
     setVinLoading(true);
     try {
@@ -117,6 +135,8 @@ export default function CreateListingScreen() {
         fuelType: result.fuel,
         bodyClass: result.body,
       });
+      setRecalls(result.recalls);
+      setRecallsError(result.recallsAvailable ? result.recallsError : null);
       setDecodedNote(
         result.hasData
           ? "VIN decoded. Only factory build data was filled in — you still need to enter mileage and title status yourself."
@@ -199,7 +219,12 @@ export default function CreateListingScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Decode by VIN</Text>
           <Text style={styles.cardSubtitle}>
@@ -207,6 +232,24 @@ export default function CreateListingScreen() {
             model, trim, engine, fuel, body style, transmission, drivetrain). It never fills in
             mileage, title status, or history.
           </Text>
+          <TouchableOpacity
+            style={styles.scanButton}
+            onPress={() => router.push("/sell/scan-vin")}
+            accessibilityRole="button"
+          >
+            <Text style={styles.scanButtonIcon}>📷</Text>
+            <Text style={styles.scanButtonText}>Scan VIN with Camera</Text>
+          </TouchableOpacity>
+          <Text style={styles.scanHint}>
+            Works on a windshield etching, door-jamb sticker, or a printed title document.
+          </Text>
+
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>OR ENTER MANUALLY</Text>
+            <View style={styles.orLine} />
+          </View>
+
           <View style={styles.inlineRow}>
             <TextInput
               style={[styles.input, styles.flexInput]}
@@ -216,8 +259,9 @@ export default function CreateListingScreen() {
               onChangeText={(v) => setVinInput(v.toUpperCase())}
               autoCapitalize="characters"
               autoCorrect={false}
+              maxLength={17}
             />
-            <TouchableOpacity style={[styles.smallButton, vinLoading && styles.buttonDisabled]} onPress={handleDecode} disabled={vinLoading}>
+            <TouchableOpacity style={[styles.smallButton, vinLoading && styles.buttonDisabled]} onPress={() => handleDecode()} disabled={vinLoading}>
               {vinLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Decode</Text>}
             </TouchableOpacity>
           </View>
@@ -233,6 +277,20 @@ export default function CreateListingScreen() {
                   .filter(Boolean)
                   .join(" · ")}
               </Text>
+
+              <Text style={styles.recallsHeading}>Open NHTSA safety recalls</Text>
+              {recallsError ? (
+                <Text style={styles.recallsEmpty}>{recallsError}</Text>
+              ) : recalls.length === 0 ? (
+                <Text style={styles.recallsEmpty}>None on record for this year, make, and model.</Text>
+              ) : (
+                recalls.map((recall, i) => (
+                  <View key={recall.campaignNumber || i} style={styles.recallItem}>
+                    <Text style={styles.recallComponent}>{recall.component || "Safety recall"}</Text>
+                    {recall.summary ? <Text style={styles.recallSummary}>{recall.summary}</Text> : null}
+                  </View>
+                ))
+              )}
             </View>
           ) : null}
         </View>
@@ -343,6 +401,21 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 16, padding: 16, marginBottom: 16 },
   cardTitle: { fontSize: 16, fontWeight: "900", color: "#111827" },
   cardSubtitle: { color: "#6b7280", fontSize: 12, lineHeight: 17, marginTop: 5, marginBottom: 12 },
+  scanButton: {
+    flexDirection: "row",
+    backgroundColor: "#111827",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  scanButtonIcon: { fontSize: 18 },
+  scanButtonText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  scanHint: { color: "#9ca3af", fontSize: 11, textAlign: "center", marginTop: 8 },
+  orRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 14 },
+  orLine: { flex: 1, height: 1, backgroundColor: "#e5e7eb" },
+  orText: { color: "#9ca3af", fontSize: 10, fontWeight: "800", letterSpacing: 1 },
   inlineRow: { flexDirection: "row", gap: 8, alignItems: "stretch" },
   flexInput: { flex: 1, marginBottom: 0 },
   input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: "#111827", marginBottom: 10, backgroundColor: "#fff" },
@@ -354,6 +427,11 @@ const styles = StyleSheet.create({
   specsGrid: { marginTop: 12, borderTopWidth: 1, borderTopColor: "#f3f4f6", paddingTop: 12 },
   specsLine: { color: "#111827", fontWeight: "800", fontSize: 14 },
   specsLineSmall: { color: "#6b7280", fontSize: 12, marginTop: 4 },
+  recallsHeading: { color: "#374151", fontSize: 11, fontWeight: "800", marginTop: 12, textTransform: "uppercase" },
+  recallsEmpty: { color: "#9ca3af", fontSize: 12, marginTop: 4 },
+  recallItem: { marginTop: 8 },
+  recallComponent: { color: "#991b1b", fontWeight: "800", fontSize: 12 },
+  recallSummary: { color: "#6b7280", fontSize: 11, lineHeight: 16, marginTop: 2 },
   fieldLabel: { color: "#374151", fontSize: 12, fontWeight: "800", marginBottom: 8 },
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   pill: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 9, paddingVertical: 9, paddingHorizontal: 12 },
