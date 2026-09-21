@@ -227,7 +227,12 @@ export default function EditVehicleScreen() {
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {vin ? <Text style={styles.vinLine}>VIN {vin}</Text> : null}
 
         <View style={styles.card}>

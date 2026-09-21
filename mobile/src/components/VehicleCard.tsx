@@ -74,89 +74,91 @@ export default function VehicleCard({
     <>
     <Link href={`/vehicle/${encodeURIComponent(vehicle.slug)}`} asChild>
       <Pressable
-        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+        style={({ pressed }) => [styles.cardShadow, pressed && styles.cardPressed]}
         accessibilityRole="link"
         accessibilityLabel={`${title}. ${
           isSold ? "Sold." : formatPrice(vehicle.price)
         } View details.`}
       >
-        <View style={styles.imageWrap}>
-          {image ? (
-            <Image source={{ uri: image }} style={styles.image} />
-          ) : (
-            <View style={[styles.image, styles.noImage]}>
-              <Text style={styles.noImageText}>Photo coming soon</Text>
-            </View>
-          )}
-
-          {isSold ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Sold</Text>
-            </View>
-          ) : vehicle.status === "pending" ? (
-            <View style={[styles.badge, styles.pendingBadge]}>
-              <Text style={styles.badgeText}>Sale Pending</Text>
-            </View>
-          ) : null}
-
-          {photoCount > 1 ? (
-            <View style={styles.photoCount}>
-              <Text style={styles.photoCountText}>{photoCount} photos</Text>
-            </View>
-          ) : null}
-
-          <Pressable
-            onPress={() => setSharePreviewOpen(true)}
-            style={styles.shareButton}
-            accessibilityRole="button"
-            accessibilityLabel={`Share ${title}`}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.shareButtonText}>⤴</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.body}>
-          <Text style={styles.title} numberOfLines={2}>
-            {title}
-          </Text>
-
-          <View style={styles.metaRow}>
-            <Text style={styles.meta}>{formatMileage(vehicle.mileage)}</Text>
-            {soldDate ? (
-              <Text style={styles.meta}>· Sold {soldDate}</Text>
-            ) : null}
-          </View>
-
-          {chips.length > 0 ? (
-            <View style={styles.chips}>
-              {chips.slice(0, 3).map((chip) => (
-                <View key={chip} style={styles.chip}>
-                  <Text style={styles.chipText} numberOfLines={1}>
-                    {chip}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {vehicle.vehicleHistoryReport?.url ? (
-            <View style={styles.reportChip}>
-              <Text style={styles.reportChipText}>
-                {vehicle.vehicleHistoryReport.source === "carfax" ? "✓ CARFAX Report" : "✓ History Report"}
-              </Text>
-            </View>
-          ) : null}
-
-          <View style={styles.footer}>
-            {isSold ? (
-              <Text style={styles.soldLabel}>No longer available</Text>
+        <View style={styles.card}>
+          <View style={styles.imageWrap}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.image} />
             ) : (
-              <Text style={styles.price}>{formatPrice(vehicle.price)}</Text>
+              <View style={[styles.image, styles.noImage]}>
+                <Text style={styles.noImageText}>Photo coming soon</Text>
+              </View>
             )}
 
-            <View style={styles.detailsButton}>
-              <Text style={styles.detailsButtonText}>View Details</Text>
+            {isSold ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>Sold</Text>
+              </View>
+            ) : vehicle.status === "pending" ? (
+              <View style={[styles.badge, styles.pendingBadge]}>
+                <Text style={styles.badgeText}>Sale Pending</Text>
+              </View>
+            ) : null}
+
+            {photoCount > 1 ? (
+              <View style={styles.photoCount}>
+                <Text style={styles.photoCountText}>{photoCount} photos</Text>
+              </View>
+            ) : null}
+
+            <Pressable
+              onPress={() => setSharePreviewOpen(true)}
+              style={styles.shareButton}
+              accessibilityRole="button"
+              accessibilityLabel={`Share ${title}`}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.shareButtonText}>⤴</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.body}>
+            <Text style={styles.title} numberOfLines={2}>
+              {title}
+            </Text>
+
+            <View style={styles.metaRow}>
+              <Text style={styles.meta}>{formatMileage(vehicle.mileage)}</Text>
+              {soldDate ? (
+                <Text style={styles.meta}>· Sold {soldDate}</Text>
+              ) : null}
+            </View>
+
+            {chips.length > 0 ? (
+              <View style={styles.chips}>
+                {chips.slice(0, 3).map((chip) => (
+                  <View key={chip} style={styles.chip}>
+                    <Text style={styles.chipText} numberOfLines={1}>
+                      {chip}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {vehicle.vehicleHistoryReport?.url ? (
+              <View style={styles.reportChip}>
+                <Text style={styles.reportChipText}>
+                  {vehicle.vehicleHistoryReport.source === "carfax" ? "✓ CARFAX Report" : "✓ History Report"}
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={styles.footer}>
+              {isSold ? (
+                <Text style={styles.soldLabel}>No longer available</Text>
+              ) : (
+                <Text style={styles.price}>{formatPrice(vehicle.price)}</Text>
+              )}
+
+              <View style={styles.detailsButton}>
+                <Text style={styles.detailsButtonText}>View Details</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -172,15 +174,26 @@ export default function VehicleCard({
 }
 
 const styles = StyleSheet.create({
+  // Shadow lives on this outer, non-clipping view — a shadow on the same
+  // view as `overflow: "hidden"` gets clipped away and never renders.
+  cardShadow: {
+    borderRadius: 18,
+    marginBottom: 18,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  cardPressed: { opacity: 0.85 },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#e5e7eb",
-    marginBottom: 16,
   },
-  cardPressed: { opacity: 0.85 },
   imageWrap: { position: "relative" },
   image: { width: "100%", height: 190, backgroundColor: "#f3f4f6" },
   noImage: { alignItems: "center", justifyContent: "center" },
@@ -218,11 +231,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   shareButtonText: { color: "#fff", fontSize: 15, fontWeight: "900" },
-  body: { padding: 14 },
+  body: { padding: 16 },
   title: { fontSize: 16, fontWeight: "800", color: "#111827", lineHeight: 21 },
-  metaRow: { flexDirection: "row", gap: 5, marginTop: 5, flexWrap: "wrap" },
+  metaRow: { flexDirection: "row", gap: 5, marginTop: 7, flexWrap: "wrap" },
   meta: { fontSize: 13, color: "#6b7280" },
-  chips: { flexDirection: "row", gap: 6, marginTop: 10, flexWrap: "wrap" },
+  chips: { flexDirection: "row", gap: 6, marginTop: 12, flexWrap: "wrap" },
   chip: {
     backgroundColor: "#f3f4f6",
     borderRadius: 999,
@@ -231,13 +244,13 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
   },
   chipText: { fontSize: 11, color: "#374151", fontWeight: "700" },
-  reportChip: { alignSelf: "flex-start", marginTop: 8 },
+  reportChip: { alignSelf: "flex-start", marginTop: 10 },
   reportChipText: { fontSize: 11, color: "#15803d", fontWeight: "800" },
   footer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 14,
+    marginTop: 16,
     gap: 10,
   },
   price: { fontSize: 20, fontWeight: "900", color: "#dc2626" },

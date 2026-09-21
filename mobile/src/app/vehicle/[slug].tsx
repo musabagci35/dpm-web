@@ -4,7 +4,9 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Linking,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -124,7 +126,16 @@ export default function VehicleDetailScreen() {
   ][];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+    >
       {images.length > 0 ? (
         <>
           <FlatList
@@ -278,12 +289,14 @@ export default function VehicleDetailScreen() {
         )}
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { paddingBottom: 40 },
+  content: { paddingBottom: 80 },
 
   centered: {
     flex: 1,
