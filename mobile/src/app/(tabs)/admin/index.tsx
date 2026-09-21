@@ -24,6 +24,7 @@ import {
   getStoredAdminSession,
   verifyAdminSession,
 } from "@/lib/auth";
+import { fetchAdminUnreadConversationCount } from "@/lib/messagesApi";
 import { formatMileage, formatPrice, vehicleTitle } from "@/lib/format";
 
 type Status = "available" | "pending" | "sold" | "archived";
@@ -36,6 +37,7 @@ export default function AdminDashboardScreen() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const loadCars = useCallback(async () => {
     const data = await fetchAdminInventory();
@@ -70,6 +72,8 @@ export default function AdminDashboardScreen() {
     } catch {
       setError("Could not load inventory. Check your connection and try again.");
     }
+
+    fetchAdminUnreadConversationCount().then(setUnreadMessages).catch(() => {});
   }, [loadCars]);
 
   useFocusEffect(
@@ -212,6 +216,15 @@ export default function AdminDashboardScreen() {
           <Text style={styles.secondaryButtonText}>View Leads</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={styles.marketplaceButton}
+        onPress={() => router.push("/admin/messages")}
+      >
+        <Text style={styles.marketplaceButtonText}>
+          Messages{unreadMessages > 0 ? ` — ${unreadMessages} unread` : ""}
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.marketplaceButton}

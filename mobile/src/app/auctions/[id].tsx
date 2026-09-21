@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +20,7 @@ import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReport
 import ShareRow from "@/components/shared/ShareRow";
 import { fetchAuction, placeBid, PublicAuction, reportAuction, toggleWatchAuction } from "@/lib/auctionApi";
 import { verifySellerSession } from "@/lib/marketplaceAuth";
+import { createOrReuseConversation } from "@/lib/messagesApi";
 import { coverImageUrl, formatBidAmount, formatMileage, formatTimeRemaining, titleStatusLabel, vehicleTitle } from "@/lib/format";
 import { WEB_BASE_URL } from "@/lib/share";
 
@@ -51,6 +52,8 @@ export default function AuctionDetailScreen() {
   const [bidding, setBidding] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
   const [bidMessage, setBidMessage] = useState<string | null>(null);
+  const [messaging, setMessaging] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -142,6 +145,20 @@ export default function AuctionDetailScreen() {
       })),
       { text: "Cancel", style: "cancel" as const },
     ]);
+  }
+
+  async function handleMessageSeller() {
+    if (!auction) return;
+    setMessaging(true);
+    setMessageError(null);
+    try {
+      const conversation = await createOrReuseConversation({ auctionId: auction._id });
+      router.push(`/sell/conversation/${conversation._id}`);
+    } catch (err) {
+      setMessageError(err instanceof Error ? err.message : "Could not start a conversation.");
+    } finally {
+      setMessaging(false);
+    }
   }
 
   function handleContactSeller() {
@@ -295,6 +312,18 @@ export default function AuctionDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {isLive && !auction.adminHidden && signedIn ? (
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={handleMessageSeller}
+            disabled={messaging}
+            accessibilityRole="button"
+          >
+            {messaging ? <ActivityIndicator color="#111827" /> : <Text style={styles.messageButtonText}>Message Seller</Text>}
+          </TouchableOpacity>
+        ) : null}
+        {messageError ? <Text style={styles.messageError}>{messageError}</Text> : null}
+
         {PUBLIC_STATUSES.has(auction.status) && !auction.adminHidden ? (
           <ShareRow
             vehicle={{
@@ -426,6 +455,9 @@ const styles = StyleSheet.create({
   watchButtonText: { color: "#111827", fontWeight: "800", fontSize: 13 },
   contactButton: { flex: 1, backgroundColor: "#b91c1c", borderRadius: 12, paddingVertical: 13, alignItems: "center" },
   contactButtonText: { color: "#fff", fontWeight: "800", fontSize: 13 },
+  messageButton: { borderWidth: 1.5, borderColor: "#111827", borderRadius: 12, paddingVertical: 13, alignItems: "center", marginTop: 10 },
+  messageButtonText: { color: "#111827", fontWeight: "800", fontSize: 13 },
+  messageError: { color: "#b91c1c", fontSize: 12, fontWeight: "700", marginTop: 8, textAlign: "center" },
 
   section: { marginTop: 24 },
   sectionHeading: { fontSize: 16, fontWeight: "900", color: "#111827", marginBottom: 10 },

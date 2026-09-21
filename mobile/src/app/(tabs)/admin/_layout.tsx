@@ -49,6 +49,8 @@ export default function AdminStackLayout() {
       />
       <Stack.Screen name="sellers" options={{ title: "Seller Management" }} />
       <Stack.Screen name="seller/[id]" options={{ title: "Seller Detail" }} />
+      <Stack.Screen name="messages" options={{ title: "Messages" }} />
+      <Stack.Screen name="conversation/[id]" options={{ title: "Conversation" }} />
     </Stack>
   );
 }

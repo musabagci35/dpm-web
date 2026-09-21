@@ -4,6 +4,8 @@ import { useFocusEffect } from "expo-router";
 import { ColorValue, Text } from "react-native";
 
 import { subscribeAdminAuthChange, verifyAdminSession } from "@/lib/auth";
+import { verifySellerSession } from "@/lib/marketplaceAuth";
+import { fetchUnreadConversationCount } from "@/lib/messagesApi";
 
 function TabIcon({ glyph, color }: { glyph: string; color: ColorValue }) {
   return <Text style={{ fontSize: 20, color }}>{glyph}</Text>;
@@ -16,11 +18,19 @@ export default function TabsLayout() {
   // protection on the admin screens themselves stays in place regardless,
   // this only controls whether the tab bar icon renders at all.
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const check = useCallback(() => {
     verifyAdminSession()
       .then((session) => setIsAdmin(Boolean(session)))
       .catch(() => setIsAdmin(false));
+  }, []);
+
+  const checkUnread = useCallback(() => {
+    verifySellerSession()
+      .then((seller) => (seller ? fetchUnreadConversationCount() : 0))
+      .then(setUnreadCount)
+      .catch(() => setUnreadCount(0));
   }, []);
 
   useEffect(() => {
@@ -32,6 +42,7 @@ export default function TabsLayout() {
   // the admin login screen, or the app resuming from the background) so an
   // expired session hides the tab again without needing a restart.
   useFocusEffect(check);
+  useFocusEffect(checkUnread);
 
   return (
     <Tabs
@@ -85,6 +96,8 @@ export default function TabsLayout() {
           tabBarLabel: "Sell",
           headerShown: false,
           tabBarIcon: ({ color }) => <TabIcon glyph="$" color={color} />,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: "#dc2626" },
         }}
       />
       <Tabs.Screen

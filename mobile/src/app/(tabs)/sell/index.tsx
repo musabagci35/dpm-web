@@ -14,6 +14,7 @@ import {
 
 import { fetchPublicListings, PublicListing } from "@/lib/marketplaceApi";
 import { SellerUser, verifySellerSession } from "@/lib/marketplaceAuth";
+import { fetchUnreadConversationCount } from "@/lib/messagesApi";
 import { coverImageUrl, formatMileage, formatPrice, titleStatusLabel, vehicleTitle } from "@/lib/format";
 import { WEB_BASE_URL } from "@/lib/share";
 import ShareVehicleModal from "@/components/shared/ShareVehicleModal";
@@ -24,6 +25,7 @@ export default function SellHubScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -41,7 +43,14 @@ export default function SellHubScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      verifySellerSession().then(setSeller);
+      verifySellerSession().then((user) => {
+        setSeller(user);
+        if (user) {
+          fetchUnreadConversationCount().then(setUnreadCount).catch(() => {});
+        } else {
+          setUnreadCount(0);
+        }
+      });
     }, [])
   );
 
@@ -89,9 +98,16 @@ export default function SellHubScreen() {
             </View>
 
             {seller ? (
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push("/sell/my-listings")}>
-                <Text style={styles.secondaryButtonText}>My Listings</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push("/sell/my-listings")}>
+                  <Text style={styles.secondaryButtonText}>My Listings</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push("/sell/messages")}>
+                  <Text style={styles.secondaryButtonText}>
+                    Messages{unreadCount > 0 ? ` (${unreadCount})` : ""}
+                  </Text>
+                </TouchableOpacity>
+              </>
             ) : (
               <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push("/sell/login")}>
                 <Text style={styles.secondaryButtonText}>Seller Sign In</Text>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocalSearchParams } from "expo-router";
+import { Link, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
@@ -21,6 +21,8 @@ import ShareRow from "@/components/shared/ShareRow";
 import { fetchVehicle, VehicleDetail } from "@/lib/api";
 import { DEALER_PHONE, DEALER_PHONE_DISPLAY, DEALER_LOCATION } from "@/lib/constants";
 import { WEB_BASE_URL } from "@/lib/share";
+import { verifySellerSession } from "@/lib/marketplaceAuth";
+import { createOrReuseConversation } from "@/lib/messagesApi";
 import {
   coverImageUrl,
   formatMileage,
@@ -40,6 +42,30 @@ export default function VehicleDetailScreen() {
   // A hook rather than Dimensions.get(): it re-renders on rotation and keeps
   // the static web render and the hydrated client in agreement.
   const { width: screenWidth } = useWindowDimensions();
+
+  const [signedIn, setSignedIn] = useState(false);
+  const [messaging, setMessaging] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      verifySellerSession().then((user) => setSignedIn(Boolean(user)));
+    }, [])
+  );
+
+  async function handleMessageDealer() {
+    if (!vehicle) return;
+    setMessaging(true);
+    setMessageError(null);
+    try {
+      const conversation = await createOrReuseConversation({ vehicleId: vehicle._id });
+      router.push(`/sell/conversation/${conversation._id}`);
+    } catch (err) {
+      setMessageError(err instanceof Error ? err.message : "Could not start a conversation.");
+    } finally {
+      setMessaging(false);
+    }
+  }
 
   const load = useCallback(async () => {
     if (!slug) return;
@@ -209,6 +235,22 @@ export default function VehicleDetailScreen() {
                 Call {DEALER_PHONE_DISPLAY}
               </Text>
             </TouchableOpacity>
+
+            {signedIn ? (
+              <TouchableOpacity
+                style={styles.messageButton}
+                onPress={handleMessageDealer}
+                disabled={messaging}
+                accessibilityRole="button"
+              >
+                {messaging ? (
+                  <ActivityIndicator color="#111827" />
+                ) : (
+                  <Text style={styles.messageButtonText}>Message Dealer</Text>
+                )}
+              </TouchableOpacity>
+            ) : null}
+            {messageError ? <Text style={styles.messageError}>{messageError}</Text> : null}
           </>
         ) : null}
 
@@ -378,6 +420,16 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   callButtonText: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  messageButton: {
+    borderWidth: 1.5,
+    borderColor: "#111827",
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  messageButtonText: { color: "#111827", fontWeight: "800", fontSize: 15 },
+  messageError: { color: "#b91c1c", fontSize: 12, fontWeight: "700", marginTop: 8, textAlign: "center" },
   reportSection: { marginTop: 14 },
 
   section: { marginTop: 24 },

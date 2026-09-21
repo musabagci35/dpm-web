@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,8 @@ import VideoPlayerCard from "@/components/marketplace/VideoPlayerCard";
 import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
 import ShareRow from "@/components/shared/ShareRow";
 import { fetchListing, PublicListing, reportListing } from "@/lib/marketplaceApi";
+import { verifySellerSession } from "@/lib/marketplaceAuth";
+import { createOrReuseConversation } from "@/lib/messagesApi";
 import { coverImageUrl, formatMileage, formatPrice, titleStatusLabel, vehicleTitle } from "@/lib/format";
 import { WEB_BASE_URL } from "@/lib/share";
 
@@ -36,6 +38,30 @@ export default function MarketplaceListingScreen() {
   const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const { width: screenWidth } = useWindowDimensions();
+
+  const [signedIn, setSignedIn] = useState(false);
+  const [messaging, setMessaging] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      verifySellerSession().then((user) => setSignedIn(Boolean(user)));
+    }, [])
+  );
+
+  async function handleMessageSeller() {
+    if (!listing) return;
+    setMessaging(true);
+    setMessageError(null);
+    try {
+      const conversation = await createOrReuseConversation({ marketplaceListingId: listing._id });
+      router.push(`/sell/conversation/${conversation._id}`);
+    } catch (err) {
+      setMessageError(err instanceof Error ? err.message : "Could not start a conversation.");
+    } finally {
+      setMessaging(false);
+    }
+  }
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -179,6 +205,18 @@ export default function MarketplaceListingScreen() {
           <Text style={styles.contactButtonText}>Contact Seller</Text>
         </TouchableOpacity>
 
+        {listing.status === "live" && !listing.adminHidden && signedIn ? (
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={handleMessageSeller}
+            disabled={messaging}
+            accessibilityRole="button"
+          >
+            {messaging ? <ActivityIndicator color="#111827" /> : <Text style={styles.messageButtonText}>Message Seller</Text>}
+          </TouchableOpacity>
+        ) : null}
+        {messageError ? <Text style={styles.messageError}>{messageError}</Text> : null}
+
         {listing.status === "live" && !listing.adminHidden ? (
           <ShareRow
             vehicle={{
@@ -278,6 +316,9 @@ const styles = StyleSheet.create({
 
   contactButton: { backgroundColor: "#b91c1c", borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 14 },
   contactButtonText: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  messageButton: { borderWidth: 1.5, borderColor: "#111827", borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 10 },
+  messageButtonText: { color: "#111827", fontWeight: "800", fontSize: 15 },
+  messageError: { color: "#b91c1c", fontSize: 12, fontWeight: "700", marginTop: 8, textAlign: "center" },
 
   section: { marginTop: 24 },
   sectionHeading: { fontSize: 16, fontWeight: "900", color: "#111827", marginBottom: 10 },
