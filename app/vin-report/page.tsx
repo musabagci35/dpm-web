@@ -12,36 +12,39 @@ export default function VinReportPage() {
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_420px] lg:items-center">
           <div>
             <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-black text-red-100">
-              Drive Prime Motors • Sacramento VIN Check
+              Drive Prime Motors • Sacramento
             </p>
 
             <h1 className="mt-5 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
-              Free VIN Report
+              Free Basic VIN Check
             </h1>
 
-            <h2 className="mt-3 text-4xl font-black text-red-400 md:text-6xl">
-              Fast. Clean. Trusted.
-            </h2>
-
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/75">
-              Check vehicle details, title concerns, auction traces, and basic VIN
-              information before you buy, sell, or trade.
+              Decode any 17-character VIN using the official NHTSA vPIC
+              database — year, make, model, trim, engine, and more, at no
+              cost.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3 text-sm font-bold">
               <span className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                Accident Check
+                Manufacturer Specs
               </span>
               <span className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                Title Status
+                Safety Recall Check
               </span>
               <span className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                Auction History
+                Powered by NHTSA vPIC
               </span>
               <span className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
                 Dealer Support
               </span>
             </div>
+
+            <p className="mt-6 max-w-2xl text-sm text-white/60">
+              This is a basic manufacturer VIN decode, not a complete vehicle
+              history report. It does not check accidents, title, ownership,
+              odometer, or service history.
+            </p>
           </div>
 
           <div className="rounded-[2rem] border border-white/10 bg-white/10 p-4 shadow-2xl backdrop-blur">
@@ -97,7 +100,7 @@ export default function VinReportPage() {
           </div>
           <h3 className="text-xl font-black">Enter VIN</h3>
           <p className="mt-3 text-gray-600">
-            Type or paste the vehicle VIN and start the report instantly.
+            Type or paste the vehicle VIN and start the check instantly.
           </p>
         </div>
 
@@ -107,7 +110,8 @@ export default function VinReportPage() {
           </div>
           <h3 className="text-xl font-black">Review Details</h3>
           <p className="mt-3 text-gray-600">
-            Check decoded vehicle information and available report details.
+            See manufacturer specs decoded directly from the VIN, plus any
+            open safety recalls.
           </p>
         </div>
 
@@ -117,7 +121,22 @@ export default function VinReportPage() {
           </div>
           <h3 className="text-xl font-black">Buy With Confidence</h3>
           <p className="mt-3 text-gray-600">
-            Use the report before buying, trading, or listing your vehicle.
+            Use this alongside a full vehicle history report before buying,
+            trading, or listing your vehicle.
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 pb-16">
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
+          <h2 className="text-lg font-black">What This Check Does &amp; Does Not Cover</h2>
+          <p className="mt-2 leading-7">
+            This free tool decodes manufacturer information from the VIN
+            using the official NHTSA vPIC database and checks for open NHTSA
+            safety recalls. It is <strong>not</strong> a Carfax or AutoCheck
+            report, and it does not show accident history, prior ownership,
+            service records, title brands, or odometer readings. For a
+            complete history, use a dedicated vehicle history provider.
           </p>
         </div>
       </section>
