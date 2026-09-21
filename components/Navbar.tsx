@@ -17,22 +17,20 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-zinc-950 text-white shadow-xl">
-      <div className="bg-gradient-to-r from-red-800 via-red-600 to-red-800 px-6 py-2 text-center text-xs font-black uppercase tracking-[0.25em] text-white">
+      <div className="bg-gradient-to-r from-red-800 via-red-600 to-red-800 px-3 py-1 text-center text-[9px] font-black uppercase tracking-[0.12em] text-white sm:px-6 sm:py-2 sm:text-xs sm:tracking-[0.25em]">
         Drive Prime Motors • Sacramento Area Used Car Dealer
       </div>
 
-      <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center">
-        <div className="px-1">
-            <Image
-              src="/logo-header.png"
-              alt="Drive Prime Motors"
-              width={500}
-              height={160}
-              priority
-              className="h-20 w-auto object-contain md:h-24"
-            />
-          </div>
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:h-24 lg:py-0">
+        <Link href="/" className="flex shrink-0 items-center">
+          <Image
+            src="/logo-header-compact.png"
+            alt="Drive Prime Motors"
+            width={1006}
+            height={514}
+            priority
+            className="h-11 w-auto object-contain sm:h-14 lg:h-24"
+          />
         </Link>
 
         <nav className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-black lg:flex">
@@ -66,7 +64,8 @@ export default function Navbar() {
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-black text-white lg:hidden"
+          aria-label={open ? "Close menu" : "Open menu"}
+          className="shrink-0 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-black text-white lg:hidden"
         >
           {open ? "Close" : "Menu"}
         </button>
