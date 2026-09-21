@@ -13,9 +13,11 @@
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "Used to take photos and record a short video of a vehicle for an inventory listing or a Sell My Car marketplace listing.",
+        "NSCameraUsageDescription": "Used to take photos, record a short video, and scan a VIN for an inventory listing or a Sell My Car marketplace listing.",
         "NSPhotoLibraryUsageDescription": "Used to select vehicle photos and video from your photo library for an inventory listing or a Sell My Car marketplace listing.",
-        "NSMicrophoneUsageDescription": "Used to record audio when you record a vehicle video for a Sell My Car marketplace listing."
+        "NSMicrophoneUsageDescription": "Used to record audio when you record a vehicle video for a Sell My Car marketplace listing.",
+        "NSFaceIDUsageDescription": "Used to sign you back in quickly after you've already signed in once with your password or phone.",
+        "NSPhotoLibraryAddUsageDescription": "Used to save a listing's own photos to your device when you download them from the Marketing Center."
       }
     },
     "android": {
@@ -46,11 +48,26 @@
         "expo-image-picker",
         {
           "photosPermission": "Used to select vehicle photos and video from your photo library for an inventory listing or a Sell My Car marketplace listing.",
-          "cameraPermission": "Used to take photos and record a short video of a vehicle for an inventory listing or a Sell My Car marketplace listing.",
+          "cameraPermission": "Used to take photos, record a short video, and scan a VIN for an inventory listing or a Sell My Car marketplace listing.",
           "microphonePermission": "Used to record audio when you record a vehicle video for a Sell My Car marketplace listing."
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Used to take photos, record a short video, and scan a VIN for an inventory listing or a Sell My Car marketplace listing.",
+          "microphonePermission": "Used to record audio when you record a vehicle video for a Sell My Car marketplace listing."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Used to save a listing's own photos to your device when you download them from the Marketing Center.",
+          "savePhotosPermission": "Used to save a listing's own photos to your device when you download them from the Marketing Center.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
