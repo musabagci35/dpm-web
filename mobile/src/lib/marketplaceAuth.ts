@@ -185,6 +185,33 @@ export async function sellerLogoutAll(): Promise<void> {
   await clearBiometricCredential("seller");
 }
 
+/**
+ * Permanently deletes the signed-in account (Apple Guideline 5.1.1(v)) —
+ * requires the current password even though a session is already active,
+ * so a left-open or stolen session alone can never trigger this. On
+ * success the server has already anonymized the account, hidden every
+ * listing/auction it owns, and revoked every session; this only needs to
+ * clear what's stored on this device.
+ */
+export async function sellerDeleteAccount(password: string): Promise<void> {
+  const res = await fetchWithTimeout(
+    `${API_BASE_URL}/api/marketplace/auth/delete-account`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ password, confirm: true }),
+    },
+    "Account deletion"
+  );
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    throw new SellerAuthError(data?.error || "Could not delete your account.", res.status);
+  }
+  await SecureStore.deleteItemAsync(SESSION_KEY);
+  await clearBiometricCredential("seller");
+}
+
 /* ------------------------------------------------------------------ *
  * Phone + SMS one-time-code login
  * ------------------------------------------------------------------ */

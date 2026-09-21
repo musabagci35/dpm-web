@@ -30,6 +30,8 @@ export default function SellStackLayout() {
       <Stack.Screen name="auction/[id]" options={{ title: "Your Auction" }} />
       <Stack.Screen name="messages" options={{ title: "Messages" }} />
       <Stack.Screen name="conversation/[id]" options={{ title: "Conversation" }} />
+      <Stack.Screen name="account" options={{ title: "Account" }} />
+      <Stack.Screen name="delete-account" options={{ title: "Delete Account" }} />
     </Stack>
   );
 }

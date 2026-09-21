@@ -107,6 +107,9 @@ export default function SellHubScreen() {
                     Messages{unreadCount > 0 ? ` (${unreadCount})` : ""}
                   </Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push("/sell/account")}>
+                  <Text style={styles.secondaryButtonText}>Account</Text>
+                </TouchableOpacity>
               </>
             ) : (
               <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push("/sell/login")}>
