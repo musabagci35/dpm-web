@@ -49,6 +49,7 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           tabBarLabel: "Home",
+          headerShown: false,
           tabBarIcon: ({ color }) => <TabIcon glyph="⌂" color={color} />,
         }}
       />
@@ -58,6 +59,7 @@ export default function TabsLayout() {
           title: "Inventory",
           tabBarLabel: "Inventory",
           tabBarIcon: ({ color }) => <TabIcon glyph="🚗" color={color} />,
+          headerStyle: { backgroundColor: "#111827", borderBottomWidth: 3, borderBottomColor: "#dc2626" },
         }}
       />
       <Tabs.Screen
