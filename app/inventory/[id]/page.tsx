@@ -1,5 +1,6 @@
 
 import mongoose from "mongoose";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/mongodb";
 import { proImage } from "@/lib/cloudinaryImage";
@@ -10,6 +11,62 @@ import Gallery from "./Gallery";
 import DetailLeadForm from "./DetailLeadForm";
 import MobileCTA from "./MobileCTA";
 import AppointmentForm from "./AppointmentForm";
+
+const SITE_URL = "https://www.driveprimemotorsllc.com";
+
+/**
+ * Real Open Graph data only — the same title/price/mileage/photo a shopper
+ * sees on the page itself, never a placeholder. A sold/archived/not-found
+ * vehicle gets a plain fallback with no vehicle-specific claims, since
+ * there's nothing real left to describe.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  await connectDB();
+
+  const car: any = mongoose.Types.ObjectId.isValid(id)
+    ? await Car.findById(id).lean()
+    : await Car.findOne({ slug: id }).lean();
+
+  if (!car || car.status === "archived" || car.isActive === false) {
+    return { title: "Vehicle Not Found | Drive Prime Motors" };
+  }
+
+  const title =
+    car.title || `${car.year} ${car.make} ${car.model} ${car.trim || ""}`.trim();
+  const price = Number(car.price || 0);
+  const mileage = car.mileage ? Number(car.mileage) : null;
+  const priceLabel = price > 0 ? `$${price.toLocaleString()}` : "Call for Price";
+  const mileageLabel = mileage ? `${mileage.toLocaleString()} miles` : "";
+  const description = [priceLabel, mileageLabel, "at Drive Prime Motors"]
+    .filter(Boolean)
+    .join(" · ");
+  const coverImage =
+    car.images?.find((img: any) => img.isCover)?.url || car.images?.[0]?.url;
+  const url = `${SITE_URL}/inventory/${car.slug || car._id}`;
+
+  return {
+    title: `${title} | Drive Prime Motors`,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "website",
+      images: coverImage ? [{ url: proImage(coverImage) }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: coverImage ? [proImage(coverImage)] : undefined,
+    },
+  };
+}
 
 function maskVin(vin?: string) {
   if (!vin) return "N/A";
