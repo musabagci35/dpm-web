@@ -3,8 +3,10 @@ import mongoose from "mongoose";
 
 import { connectDB } from "@/lib/mongodb";
 import MarketplaceListing from "@/models/MarketplaceListing";
+import MarketplaceSeller from "@/models/MarketplaceSeller";
 import { getSellerSession } from "@/lib/sellerSession";
 import { getStripe, FEATURED_UPGRADE_FEE_CENTS } from "@/lib/stripe";
+import { hasVerifiedContact, UNVERIFIED_CONTACT_ERROR } from "@/lib/sellerVerification";
 
 /** Starts the optional $99 featured-upgrade Stripe Checkout. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -23,6 +25,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   if (!listing || String(listing.sellerId) !== String(session.sellerId)) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+  }
+
+  const seller = await MarketplaceSeller.findById(session.sellerId).select(
+    "emailVerified phoneVerified"
+  );
+  if (!seller || !hasVerifiedContact(seller)) {
+    return NextResponse.json({ error: UNVERIFIED_CONTACT_ERROR }, { status: 403 });
   }
 
   if (listing.featured) {

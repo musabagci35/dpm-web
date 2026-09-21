@@ -3,8 +3,10 @@ import mongoose from "mongoose";
 
 import { connectDB } from "@/lib/mongodb";
 import MarketplaceListing from "@/models/MarketplaceListing";
+import MarketplaceSeller from "@/models/MarketplaceSeller";
 import { getSellerSession } from "@/lib/sellerSession";
 import { getStripe, LISTING_FEE_CENTS } from "@/lib/stripe";
+import { hasVerifiedContact, UNVERIFIED_CONTACT_ERROR } from "@/lib/sellerVerification";
 
 /**
  * Starts the $49 listing-fee Stripe Checkout for the seller's own draft.
@@ -30,6 +32,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
+  const seller = await MarketplaceSeller.findById(session.sellerId).select(
+    "emailVerified phoneVerified"
+  );
+  if (!seller || !hasVerifiedContact(seller)) {
+    return NextResponse.json({ error: UNVERIFIED_CONTACT_ERROR }, { status: 403 });
+  }
+
   if (listing.status !== "draft") {
     return NextResponse.json(
       { error: `This listing is already ${listing.status.replace("_", " ")}.` },
@@ -45,6 +54,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   if (!listing.images?.length) {
     return NextResponse.json({ error: "Add at least one photo first." }, { status: 400 });
+  }
+  if (!listing.ownershipAttested) {
+    return NextResponse.json(
+      { error: "Confirm that you own this vehicle and the listing is accurate before paying to publish it." },
+      { status: 400 }
+    );
   }
 
   let stripe;
