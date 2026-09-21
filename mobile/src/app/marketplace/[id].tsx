@@ -17,6 +17,7 @@ import {
 import VideoPlayerCard from "@/components/marketplace/VideoPlayerCard";
 import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
 import ShareRow from "@/components/shared/ShareRow";
+import ContactCenterButton from "@/components/shared/ContactCenterButton";
 import { fetchListing, PublicListing, reportListing } from "@/lib/marketplaceApi";
 import { verifySellerSession } from "@/lib/marketplaceAuth";
 import { createOrReuseConversation } from "@/lib/messagesApi";
@@ -144,6 +145,7 @@ export default function MarketplaceListingScreen() {
   ].filter(([, value]) => Boolean(value && String(value).trim())) as [string, string][];
 
   return (
+    <View style={styles.flex}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {images.length > 0 ? (
         <>
@@ -282,10 +284,13 @@ export default function MarketplaceListingScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    <ContactCenterButton context={{ marketplaceListingId: listing._id }} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   container: { flex: 1, backgroundColor: "#f9fafb" },
   content: { paddingBottom: 40 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f9fafb", paddingHorizontal: 28 },

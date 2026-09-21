@@ -18,6 +18,7 @@ import {
 import ContactForm from "@/components/ContactForm";
 import VehicleHistoryReportButton from "@/components/shared/VehicleHistoryReportButton";
 import ShareRow from "@/components/shared/ShareRow";
+import ContactCenterButton from "@/components/shared/ContactCenterButton";
 import { fetchVehicle, VehicleDetail } from "@/lib/api";
 import { DEALER_PHONE, DEALER_PHONE_DISPLAY, DEALER_LOCATION } from "@/lib/constants";
 import { WEB_BASE_URL } from "@/lib/share";
@@ -331,6 +332,7 @@ export default function VehicleDetailScreen() {
         )}
       </View>
     </ScrollView>
+    <ContactCenterButton context={{ vehicleId: vehicle._id }} />
     </KeyboardAvoidingView>
   );
 }

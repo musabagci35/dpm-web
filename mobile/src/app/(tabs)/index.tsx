@@ -16,6 +16,7 @@ import {
 
 import AuctionCard from "@/components/auctions/AuctionCard";
 import VehicleCard from "@/components/VehicleCard";
+import ContactCenterButton from "@/components/shared/ContactCenterButton";
 import { fetchInventory, VehicleSummary } from "@/lib/api";
 import { fetchAuctions, fetchWatchlist, PublicAuction } from "@/lib/auctionApi";
 import {
@@ -412,6 +413,8 @@ export default function HomeScreen() {
           <Text style={styles.visitCardLink}>Get Directions →</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <ContactCenterButton />
     </View>
   );
 }
