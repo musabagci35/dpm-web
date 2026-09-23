@@ -3,9 +3,18 @@
 import { useState } from "react";
 import PhotoManager from "@/components/PhotoManager";
 import VehicleVideoField from "@/components/admin/VehicleVideoField";
+import VehicleHistoryReportSection, {
+  VehicleHistoryReportInput,
+} from "@/components/admin/VehicleHistoryReportSection";
 import VinDecodeButton, { DecodedVinData } from "@/components/admin/VinDecodeButton";
 import VinDecodedInfoPanel from "@/components/VinDecodedInfoPanel";
 import { resolveVinFieldUpdates } from "@/lib/vinFieldMerge";
+
+const EMPTY_HISTORY_REPORT: VehicleHistoryReportInput = {
+  url: "",
+  source: "carfax",
+  reportDate: null,
+};
 
 export default function AddCar() {
   const [loading, setLoading] = useState(false);
@@ -15,6 +24,9 @@ export default function AddCar() {
   const [videoUrl, setVideoUrl] = useState("");
   const [vin, setVin] = useState("");
   const [decodedInfo, setDecodedInfo] = useState<DecodedVinData | null>(null);
+  const [historyReport, setHistoryReport] = useState<VehicleHistoryReportInput>(
+    EMPTY_HISTORY_REPORT
+  );
 
   function handleDecoded(data: DecodedVinData) {
     setDecodedInfo(data);
@@ -105,6 +117,7 @@ Contact us today to schedule a test drive or financing options.`.trim();
       titleStatus: String(formData.get("titleStatus") || "unknown"),
       description: String(formData.get("description") || ""),
       videoUrl,
+      vehicleHistoryReport: historyReport,
       images,
       status,
       isFeatured,
@@ -131,6 +144,7 @@ Contact us today to schedule a test drive or financing options.`.trim();
         setVideoUrl("");
         setVin("");
         setDecodedInfo(null);
+        setHistoryReport(EMPTY_HISTORY_REPORT);
       } else {
         alert(result.error || "Error");
       }
@@ -288,6 +302,8 @@ Contact us today to schedule a test drive or financing options.`.trim();
           </label>
         </div>
         <VehicleVideoField value={videoUrl} onChange={setVideoUrl} />
+
+        <VehicleHistoryReportSection value={historyReport} onChange={setHistoryReport} />
 
         <textarea
           name="description"

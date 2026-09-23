@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/mongodb";
 import { proImage } from "@/lib/cloudinaryImage";
 import Car from "@/models/Car";
+import { hasPublicVehicleHistoryReport } from "@/models/VehicleHistoryReport";
 import Link from "next/link";
 
 import Gallery from "./Gallery";
@@ -166,6 +167,13 @@ export default async function VehicleDetailPage({
   const coverImageUrl =
     car.images?.find((img: any) => img.isCover)?.url || car.images?.[0]?.url;
   const videoPoster = coverImageUrl ? proImage(coverImageUrl) : mainImage;
+
+  // Deliberately separate from the VIN report below — this is only ever a
+  // real report an admin attached, never generated or inferred. Falls back
+  // to the deprecated carfaxUrl field for older listings.
+  const carfaxReportUrl = hasPublicVehicleHistoryReport(car.vehicleHistoryReport)
+    ? car.vehicleHistoryReport.url
+    : (car.carfaxUrl || "").trim() || null;
 
   const schema = buildSchema(
     car,
@@ -364,6 +372,19 @@ export default async function VehicleDetailPage({
                     >
                       View VIN Report →
                     </Link>
+                  </div>
+                )}
+
+                {carfaxReportUrl && (
+                  <div className="mt-4">
+                    <a
+                      href={carfaxReportUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block rounded-xl bg-red-600 px-5 py-3 text-center text-sm font-black text-white hover:bg-red-700"
+                    >
+                      View CARFAX Report →
+                    </a>
                   </div>
                 )}
               </div>

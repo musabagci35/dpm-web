@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import PhotoManager from "@/components/PhotoManager";
 import VehicleVideoField from "@/components/admin/VehicleVideoField";
+import VehicleHistoryReportSection from "@/components/admin/VehicleHistoryReportSection";
 import VinDecodeButton, { DecodedVinData } from "@/components/admin/VinDecodeButton";
 import VinDecodedInfoPanel from "@/components/VinDecodedInfoPanel";
 import { resolveVinFieldUpdates } from "@/lib/vinFieldMerge";
@@ -747,6 +748,13 @@ export default function EditCarPage() {
           <VehicleVideoField
             value={car.videoUrl || ""}
             onChange={(url) => setCar({ ...car, videoUrl: url })}
+          />
+        </div>
+
+        <div className="mt-6">
+          <VehicleHistoryReportSection
+            value={car.vehicleHistoryReport}
+            onChange={(next) => setCar({ ...car, vehicleHistoryReport: next })}
           />
         </div>
 
