@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import AiAssistantWidget from "./AiAssistantWidget";
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,6 +18,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
+      <AiAssistantWidget />
     </>
   );
 }
